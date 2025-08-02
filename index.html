@@ -651,7 +651,7 @@
                         Loading indices data...
                     </div>
                 </div>
-                <div class="data-source">📡 Yahoo Finance (Enhanced)</div>
+                <div class="data-source">📡 Yahoo Finance (Direct + CORS Proxy)</div>
             </div>
 
             <!-- Sector Performance Card -->
@@ -669,7 +669,7 @@
                         Loading sector data...
                     </div>
                 </div>
-                <div class="data-source">📡 Yahoo Finance ETFs (Enhanced)</div>
+                <div class="data-source">📡 Yahoo Finance ETFs (Direct + CORS Proxy)</div>
             </div>
 
             <!-- Market Health Card -->
@@ -712,7 +712,7 @@
                         Loading sentiment data...
                     </div>
                 </div>
-                <div class="data-source">📡 VIX • Treasury • Options (Enhanced)</div>
+                <div class="data-source">📡 VIX • Treasury • Options (CORS Proxy Enabled)</div>
             </div>
 
             <!-- Market Breadth Card -->
@@ -748,7 +748,7 @@
                         Loading bond data...
                     </div>
                 </div>
-                <div class="data-source">📡 Treasury Yields • Risk Sentiment (Enhanced)</div>
+                <div class="data-source">📡 Treasury Yields • Risk Sentiment (CORS Proxy Enabled)</div>
             </div>
         </div>
 
@@ -765,6 +765,9 @@
                 </button>
                 <button class="btn btn-secondary" onclick="dashboard.exportData()">
                     💾 Export Data
+                </button>
+                <button class="btn btn-secondary" onclick="dashboard.showCorsInstructions()">
+                    🔧 CORS Help
                 </button>
             </div>
         </footer>
@@ -862,9 +865,10 @@
                     if (successful === total) {
                         this.showNotification('✅ All data loaded successfully!', 'success');
                     } else if (successful > total * 0.6) {
-                        this.showNotification(`⚠️ ${successful}/${total} data sources loaded (some data unavailable)`, 'warning');
+                        this.showNotification(`⚠️ ${successful}/${total} data sources loaded. Some may need CORS proxy.`, 'warning');
                     } else {
-                        this.showNotification('❌ Multiple sources failed (limited data available)', 'error');
+                        this.showNotification('❌ Most sources failed. Check console for CORS proxy instructions.', 'error');
+                        this.showCorsInstructions();
                     }
                 } catch (error) {
                     console.error('Data loading error:', error);
@@ -1152,23 +1156,27 @@
                 }
             }
 
-            // 🔧 Enhanced Yahoo Finance data fetching with multiple endpoints
+            // 🔧 Enhanced Yahoo Finance data fetching with CORS proxy
             async fetchYahooDataWithFallback(symbol) {
-                const endpoints = [
+                // Try direct endpoints first, then CORS proxy
+                const directEndpoints = [
                     `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`,
-                    `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`,
-                    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`,
-                    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`
+                    `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`
+                ];
+                
+                const proxyEndpoints = [
+                    `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`)}`,
+                    `https://cors-anywhere.herokuapp.com/https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`
                 ];
 
-                for (const url of endpoints) {
+                // Try direct endpoints first
+                for (const url of directEndpoints) {
                     try {
-                        const response = await this.fetchWithTimeout(url, 6000);
+                        const response = await this.simpleFetch(url, 5000);
                         if (!response.ok) continue;
                         
                         const data = await response.json();
                         
-                        // Handle chart API response
                         if (data.chart?.result?.[0]) {
                             const result = data.chart.result[0];
                             const meta = result.meta;
@@ -1187,14 +1195,33 @@
                             };
                         }
                         
-                        // Handle quote API response
-                        if (data.quoteResponse?.result?.[0]) {
-                            const quote = data.quoteResponse.result[0];
-                            const currentPrice = quote.regularMarketPrice || quote.previousClose;
-                            const previousClose = quote.previousClose;
+                    } catch (error) {
+                        console.warn(`Direct endpoint failed for ${symbol}:`, error.message);
+                        continue;
+                    }
+                }
+
+                // Try CORS proxy endpoints
+                for (const url of proxyEndpoints) {
+                    try {
+                        const response = await this.simpleFetch(url, 8000);
+                        if (!response.ok) continue;
+                        
+                        let data = await response.json();
+                        
+                        // Handle AllOrigins response format
+                        if (data.contents) {
+                            data = JSON.parse(data.contents);
+                        }
+                        
+                        if (data.chart?.result?.[0]) {
+                            const result = data.chart.result[0];
+                            const meta = result.meta;
+                            const currentPrice = meta.regularMarketPrice || meta.previousClose;
+                            const previousClose = meta.previousClose;
                             const change = currentPrice - previousClose;
                             const changePercent = (change / previousClose) * 100;
-                            const volume = quote.regularMarketVolume || 0;
+                            const volume = meta.regularMarketVolume || 0;
                             
                             return {
                                 currentPrice,
@@ -1206,12 +1233,12 @@
                         }
                         
                     } catch (error) {
-                        console.warn(`Endpoint failed for ${symbol}:`, error.message);
+                        console.warn(`Proxy endpoint failed for ${symbol}:`, error.message);
                         continue;
                     }
                 }
 
-                console.error(`All Yahoo Finance endpoints failed for ${symbol}`);
+                console.error(`All endpoints failed for ${symbol}`);
                 return null;
             }
 
@@ -1667,31 +1694,31 @@
                 return volume.toString();
             }
 
-            // 🔧 Enhanced utility functions with better timeout handling
-            async fetchWithTimeout(url, timeout = 6000) {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeout);
-                
-                try {
-                    const response = await fetch(url, {
-                        signal: controller.signal,
+            // 🔧 Simple fetch without AbortController (fixes cloning issue)
+            async simpleFetch(url, timeout = 5000) {
+                return new Promise((resolve, reject) => {
+                    const timeoutId = setTimeout(() => {
+                        reject(new Error('Request timeout'));
+                    }, timeout);
+                    
+                    fetch(url, {
                         mode: 'cors',
                         headers: {
-                            'User-Agent': 'Mozilla/5.0 (compatible; Elite-Market-Dashboard/2.0)',
+                            'User-Agent': 'Mozilla/5.0 (compatible; Elite-Market-Dashboard/2.4)',
                             'Accept': 'application/json,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                             'Cache-Control': 'no-cache',
                             'Pragma': 'no-cache'
                         }
+                    })
+                    .then(response => {
+                        clearTimeout(timeoutId);
+                        resolve(response);
+                    })
+                    .catch(error => {
+                        clearTimeout(timeoutId);
+                        reject(error);
                     });
-                    clearTimeout(timeoutId);
-                    return response;
-                } catch (error) {
-                    clearTimeout(timeoutId);
-                    if (error.name === 'AbortError') {
-                        throw new Error('Request timeout');
-                    }
-                    throw error;
-                }
+                });
             }
 
             delay(ms) {
@@ -1799,6 +1826,27 @@
                 setTimeout(() => {
                     notification.classList.remove('show');
                 }, duration);
+            }
+
+            showCorsInstructions() {
+                console.log(`
+🔧 CORS PROXY SETUP INSTRUCTIONS:
+
+If data isn't loading, try these steps:
+
+1. CORS-Anywhere (Temporary Demo):
+   Visit: https://cors-anywhere.herokuapp.com/corsdemo
+   Click "Request temporary access to the demo server"
+   
+2. Browser Extension (Recommended):
+   Install "CORS Unblock" or similar browser extension
+   
+3. Local Development:
+   Use: npm install -g cors-anywhere
+   Run: cors-anywhere
+   
+The dashboard will automatically try CORS proxies when direct access fails.
+                `);
             }
 
             // ⌨️ Keyboard shortcuts
@@ -1937,7 +1985,7 @@
                 try {
                     const exportData = {
                         timestamp: new Date().toISOString(),
-                        version: '2.4-YahooFinance',
+                        version: '2.5-CORSFixed',
                         data: this.dataCache,
                         timestamps: this.timestamps
                     };
@@ -1971,7 +2019,7 @@
         // 🚀 Initialize the Elite Dashboard
         let dashboard;
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🎯 Elite Market Dashboard v2.4-YahooFinance Loading...');
+            console.log('🎯 Elite Market Dashboard v2.5-CORSFixed Loading...');
             dashboard = new EliteMarketDashboard();
         });
 
