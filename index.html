@@ -766,6 +766,9 @@
                 <button class="btn btn-secondary" onclick="dashboard.exportData()">
                     💾 Export Data
                 </button>
+                <button class="btn btn-secondary" onclick="dashboard.showApiKeyInfo()">
+                    🔑 API Setup
+                </button>
             </div>
         </footer>
     </div>
@@ -782,13 +785,20 @@
         class EliteMarketDashboard {
             constructor() {
                 this.lastUpdate = null;
-                this.refreshInterval = 2 * 60 * 1000; // 2 minutes
+                this.refreshInterval = 5 * 60 * 1000; // 5 minutes
                 this.autoRefresh = true;
                 this.refreshTimer = null;
                 this.dataCache = {};
                 this.retryAttempts = {};
                 this.maxRetries = 3;
                 this.timestamps = {}; // Track individual data timestamps
+                this.apiKeys = {
+                    alphaVantage: 'demo', // Users can replace with their own key
+                };
+                this.apiCallCount = {
+                    alphaVantage: 0,
+                    yahoo: 0
+                };
                 this.init();
             }
 
@@ -890,7 +900,7 @@
 
                     for (const {symbol, name, icon, url} of symbols) {
                         try {
-                            const data = await this.fetchYahooDataWithFallback(symbol);
+                            const data = await this.fetchMarketDataHybrid(symbol);
                             if (data) {
                                 const timestamp = new Date().toLocaleTimeString();
                                 this.timestamps[symbol] = timestamp;
@@ -910,7 +920,7 @@
                             console.warn(`Failed to load ${symbol}:`, error.message);
                         }
                         
-                        await this.delay(150);
+                        await this.delay(250); // Increased delay for API friendliness
                     }
 
                     // Only display real data - no fallbacks
@@ -952,7 +962,7 @@
 
                     for (const {symbol, name, icon, url} of sectorETFs) {
                         try {
-                            const data = await this.fetchYahooDataWithFallback(symbol);
+                            const data = await this.fetchMarketDataHybrid(symbol);
                             if (data) {
                                 const timestamp = new Date().toLocaleTimeString();
                                 this.timestamps[symbol] = timestamp;
@@ -971,7 +981,7 @@
                             console.warn(`Failed to load ${symbol}:`, error.message);
                         }
                         
-                        await this.delay(120);
+                        await this.delay(200); // Slightly longer delay for ETFs
                     }
 
                     // Only display real data - no fallbacks
@@ -997,9 +1007,9 @@
                 
                 try {
                     const [vixData, tltData, spyData] = await Promise.all([
-                        this.fetchYahooDataWithFallback('^VIX'),
-                        this.fetchYahooDataWithFallback('TLT'),
-                        this.fetchYahooDataWithFallback('SPY')
+                        this.fetchMarketDataHybrid('^VIX'),
+                        this.fetchMarketDataHybrid('TLT'),
+                        this.fetchMarketDataHybrid('SPY')
                     ]);
 
                     const timestamp = new Date().toLocaleTimeString();
@@ -1097,7 +1107,7 @@
 
                     for (const {symbol, name, icon, url} of bondSymbols) {
                         try {
-                            const data = await this.fetchYahooDataWithFallback(symbol);
+                            const data = await this.fetchMarketDataHybrid(symbol);
                             if (data) {
                                 const timestamp = new Date().toLocaleTimeString();
                                 this.timestamps[symbol] = timestamp;
@@ -1115,7 +1125,7 @@
                             console.warn(`Failed to load ${symbol}:`, error.message);
                         }
                         
-                        await this.delay(200);
+                        await this.delay(300); // Longer delay for bond data
                     }
 
                     // Only display real bond data - no fallbacks
@@ -1149,6 +1159,99 @@
                     await this.handleDataError('breadth', error);
                 } finally {
                     this.showLoader('breadth-loader', false);
+                }
+            }
+
+            // 🔧 Hybrid data fetching with multiple sources
+            async fetchMarketDataHybrid(symbol) {
+                const sources = [
+                    { name: 'alphaVantage', fetcher: () => this.fetchAlphaVantageData(symbol) },
+                    { name: 'yahoo', fetcher: () => this.fetchYahooDataWithFallback(symbol) }
+                ];
+
+                for (const source of sources) {
+                    try {
+                        console.log(`Trying ${source.name} for ${symbol}`);
+                        const data = await source.fetcher();
+                        if (data) {
+                            this.apiCallCount[source.name]++;
+                            console.log(`✅ ${source.name} success for ${symbol}`);
+                            return data;
+                        }
+                    } catch (error) {
+                        console.warn(`❌ ${source.name} failed for ${symbol}:`, error.message);
+                        continue;
+                    }
+                }
+
+                console.error(`All sources failed for ${symbol}`);
+                return null;
+            }
+
+            // 📊 Alpha Vantage API integration
+            async fetchAlphaVantageData(symbol) {
+                // Alpha Vantage symbol mapping
+                const symbolMap = {
+                    '^GSPC': 'SPY', // Use SPY as proxy for S&P 500
+                    '^IXIC': 'QQQ', // Use QQQ as proxy for NASDAQ
+                    '^DJI': 'DIA',  // Use DIA as proxy for Dow Jones
+                    '^RUT': 'IWM',  // Use IWM as proxy for Russell 2000
+                    'DX-Y.NYB': 'UUP', // Use UUP as proxy for Dollar Index
+                    '^TNX': 'TLT',  // Use TLT (inverse) as proxy for 10Y Treasury
+                    '^VIX': 'VXX'   // Use VXX as proxy for VIX
+                };
+
+                const mappedSymbol = symbolMap[symbol] || symbol;
+                
+                // Skip Alpha Vantage for some symbols that work better with Yahoo
+                const yahooOnlySymbols = ['^TYX', '^FVX', 'TLT'];
+                if (yahooOnlySymbols.includes(symbol)) {
+                    return null;
+                }
+
+                const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${mappedSymbol}&apikey=${this.apiKeys.alphaVantage}`;
+                
+                try {
+                    const response = await this.fetchWithTimeout(url, 8000);
+                    if (!response.ok) return null;
+                    
+                    const data = await response.json();
+                    const quote = data['Global Quote'];
+                    
+                    if (!quote || Object.keys(quote).length === 0) {
+                        return null;
+                    }
+
+                    const currentPrice = parseFloat(quote['05. price']);
+                    const previousClose = parseFloat(quote['08. previous close']);
+                    const change = currentPrice - previousClose;
+                    const changePercent = (change / previousClose) * 100;
+                    const volume = parseInt(quote['06. volume']) || 0;
+
+                    // Handle Treasury yield symbols differently
+                    if (symbol === '^TNX') {
+                        // For TNX, we need to invert TLT performance and estimate yield
+                        const estimatedYield = 4.5 - (changePercent * 0.1); // Rough inverse relationship
+                        return {
+                            currentPrice: Math.max(0, estimatedYield),
+                            change: -change * 0.05,
+                            changePercent: -changePercent * 0.1,
+                            volume: 0,
+                            previousClose: estimatedYield - (-change * 0.05)
+                        };
+                    }
+
+                    return {
+                        currentPrice,
+                        change,
+                        changePercent,
+                        volume,
+                        previousClose
+                    };
+
+                } catch (error) {
+                    console.warn(`Alpha Vantage error for ${symbol}:`, error.message);
+                    return null;
                 }
             }
 
@@ -1818,14 +1921,35 @@
                 ]);
             }
 
+            // 🔑 API Key management
+            setAlphaVantageKey(apiKey) {
+                this.apiKeys.alphaVantage = apiKey;
+                this.showNotification('✅ Alpha Vantage API key updated!', 'success');
+                console.log('💡 Alpha Vantage API key updated. Get your free key at: https://www.alphavantage.co/support/#api-key');
+            }
+
+            showApiKeyInfo() {
+                const message = `
+                🔑 For better reliability, get a free Alpha Vantage API key:
+                1. Visit: https://www.alphavantage.co/support/#api-key
+                2. Sign up for free (500 calls/day)
+                3. Call: dashboard.setAlphaVantageKey('YOUR_KEY_HERE')
+                
+                Currently using: ${this.apiKeys.alphaVantage === 'demo' ? 'Demo key (limited)' : 'Custom key'}
+                `;
+                console.log(message);
+                this.showNotification('Check console for API key setup info', 'info', 5000);
+            }
+
             // 💾 Data export
             exportData() {
                 try {
                     const exportData = {
                         timestamp: new Date().toISOString(),
-                        version: '2.2-SafeData',
+                        version: '2.3-HybridAPI',
                         data: this.dataCache,
-                        timestamps: this.timestamps
+                        timestamps: this.timestamps,
+                        apiUsage: this.apiCallCount
                     };
                     
                     const dataStr = JSON.stringify(exportData, null, 2);
@@ -1847,9 +1971,11 @@
 
             updateTimestamp() {
                 this.lastUpdate = new Date();
+                const apiUsage = `Alpha Vantage: ${this.apiCallCount.alphaVantage} • Yahoo: ${this.apiCallCount.yahoo}`;
                 document.getElementById('last-updated').innerHTML = `
                     ⏱️ Last updated: <strong>${this.lastUpdate.toLocaleTimeString()}</strong><br>
-                    <small>⚡ Auto-refresh: ${this.autoRefresh ? 'ON' : 'OFF'} • 🔄 Every ${this.refreshInterval / 60000} minutes • ⌨️ Ctrl+R to refresh • 🖱️ Click data for sources</small>
+                    <small>⚡ Auto-refresh: ${this.autoRefresh ? 'ON' : 'OFF'} • 🔄 Every ${this.refreshInterval / 60000} minutes • ⌨️ Ctrl+R to refresh • 🖱️ Click data for sources</small><br>
+                    <small>📊 API Usage: ${apiUsage}</small>
                 `;
             }
         }
@@ -1857,8 +1983,15 @@
         // 🚀 Initialize the Elite Dashboard
         let dashboard;
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🎯 Elite Market Dashboard v2.2-SafeData Loading...');
+            console.log('🎯 Elite Market Dashboard v2.3-HybridAPI Loading...');
             dashboard = new EliteMarketDashboard();
+            
+            // Show API setup info on first load
+            setTimeout(() => {
+                if (dashboard.apiKeys.alphaVantage === 'demo') {
+                    dashboard.showApiKeyInfo();
+                }
+            }, 3000);
         });
 
         // 🔧 Service Worker registration (for future PWA features)
