@@ -43,77 +43,29 @@
             position: relative;
         }
 
-        /* Animated background particles */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                radial-gradient(2px 2px at 20% 30%, var(--accent-primary), transparent),
-                radial-gradient(2px 2px at 40% 70%, var(--accent-secondary), transparent),
-                radial-gradient(1px 1px at 90% 40%, var(--accent-success), transparent),
-                radial-gradient(1px 1px at 60% 10%, var(--accent-warning), transparent);
-            animation: sparkle 20s linear infinite;
-            pointer-events: none;
-            z-index: -1;
-        }
 
-        @keyframes sparkle {
-            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
-            50% { transform: translateY(-100px) rotate(180deg); opacity: 0.8; }
-        }
 
         .container {
             max-width: 1600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
             position: relative;
             z-index: 1;
         }
 
-        /* Header */
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-            position: relative;
-        }
 
-        .header h1 {
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-            animation: glow-pulse 3s ease-in-out infinite alternate;
-        }
-
-        @keyframes glow-pulse {
-            from { filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.3)); }
-            to { filter: drop-shadow(0 0 30px rgba(124, 58, 237, 0.6)); }
-        }
-
-        .header-subtitle {
-            font-size: 1.2rem;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-        }
 
         /* Market Status Bar */
         .market-status-bar {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 30px;
-            margin-bottom: 30px;
-            padding: 15px 30px;
+            gap: 25px;
+            margin-bottom: 15px;
+            padding: 12px 25px;
             background: var(--bg-card);
             backdrop-filter: blur(20px);
-            border-radius: 50px;
+            border-radius: 40px;
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-card);
             flex-wrap: wrap;
@@ -145,17 +97,17 @@
         /* Dashboard Grid */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
         /* Cards */
         .card {
             background: var(--bg-card);
             backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 25px;
+            border-radius: 15px;
+            padding: 18px;
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-card);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -189,22 +141,22 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             position: relative;
             z-index: 2;
         }
 
         .card-title {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .card-icon {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             filter: drop-shadow(0 0 5px currentColor);
         }
 
@@ -233,8 +185,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 15px 0;
-            padding: 12px 0;
+            margin: 10px 0;
+            padding: 8px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
             position: relative;
@@ -242,9 +194,9 @@
 
         .metric:hover {
             background: rgba(255, 255, 255, 0.02);
-            border-radius: 8px;
-            padding: 12px 15px;
-            margin: 15px -15px;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin: 10px -12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
@@ -255,12 +207,12 @@
         .metric-label {
             font-weight: 500;
             color: var(--text-secondary);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         .metric-value {
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             transition: all 0.3s ease;
             text-align: right;
         }
@@ -293,16 +245,16 @@
         /* Sector Grid */
         .sector-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 12px;
-            margin-top: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
         }
 
         .sector-item {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 15px 10px;
+            border-radius: 10px;
+            padding: 12px 8px;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
@@ -333,33 +285,33 @@
         }
 
         .sector-name {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: var(--text-primary);
         }
 
         .sector-change {
-            font-size: 1.1rem;
+            font-size: 1.0rem;
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
 
         .sector-price {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
         }
 
         /* Fear & Greed Meter */
         .fear-greed-container {
             text-align: center;
-            padding: 20px 0;
+            padding: 15px 0;
         }
 
         .meter {
-            width: 220px;
-            height: 110px;
-            border-radius: 110px 110px 0 0;
+            width: 180px;
+            height: 90px;
+            border-radius: 90px 90px 0 0;
             background: conic-gradient(from 180deg, 
                 #dc2626 0deg, 
                 #ea580c 36deg, 
@@ -367,48 +319,48 @@
                 #22c55e 108deg, 
                 #10b981 144deg, 
                 #06b6d4 180deg);
-            margin: 0 auto 20px;
+            margin: 0 auto 15px;
             position: relative;
             overflow: hidden;
             box-shadow: 
-                inset 0 0 30px rgba(0,0,0,0.4),
-                0 0 30px rgba(0, 212, 255, 0.1);
+                inset 0 0 25px rgba(0,0,0,0.4),
+                0 0 25px rgba(0, 212, 255, 0.1);
         }
 
         .meter::before {
             content: '';
             position: absolute;
-            top: 10px;
-            left: 10px;
-            right: 10px;
-            bottom: -5px;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            bottom: -4px;
             background: var(--bg-secondary);
-            border-radius: 100px 100px 0 0;
+            border-radius: 82px 82px 0 0;
         }
 
         .meter-needle {
             position: absolute;
             bottom: 0;
             left: 50%;
-            width: 4px;
-            height: 95px;
+            width: 3px;
+            height: 78px;
             background: linear-gradient(to top, var(--accent-primary), #ffffff);
             transform-origin: bottom;
             transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 2px;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
             z-index: 10;
         }
 
         .meter-value {
-            font-size: 2.5rem;
+            font-size: 2.0rem;
             font-weight: 800;
-            margin: 10px 0;
-            text-shadow: 0 0 20px currentColor;
+            margin: 8px 0;
+            text-shadow: 0 0 15px currentColor;
         }
 
         .meter-text {
-            font-size: 1.1rem;
+            font-size: 1.0rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -448,52 +400,52 @@
 
         /* Data Sources */
         .data-source {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
             text-align: center;
-            margin-top: 15px;
-            padding-top: 10px;
+            margin-top: 10px;
+            padding-top: 8px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         /* Footer */
         .footer {
             text-align: center;
-            margin-top: 40px;
-            padding: 30px 20px;
+            margin-top: 20px;
+            padding: 20px 15px;
             background: var(--bg-card);
             backdrop-filter: blur(20px);
-            border-radius: 20px;
+            border-radius: 15px;
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-card);
         }
 
         .last-updated {
             color: var(--text-secondary);
-            font-size: 0.95rem;
-            margin-bottom: 15px;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
         }
 
         .controls {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
         }
 
         /* Buttons */
         .btn {
-            padding: 10px 20px;
+            padding: 8px 16px;
             border: none;
-            border-radius: 25px;
+            border-radius: 20px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
+            gap: 6px;
+            font-size: 0.85rem;
         }
 
         .btn-primary {
@@ -565,22 +517,18 @@
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
-                padding: 15px;
+                padding: 8px;
             }
 
             .dashboard-grid {
                 grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .header h1 {
-                font-size: 2.5rem;
+                gap: 12px;
             }
 
             .market-status-bar {
                 flex-direction: column;
-                gap: 15px;
-                padding: 20px;
+                gap: 10px;
+                padding: 15px;
             }
 
             .sector-grid {
@@ -593,17 +541,17 @@
             }
 
             .fab {
-                bottom: 20px;
-                right: 20px;
-                width: 50px;
-                height: 50px;
-                font-size: 1.2rem;
+                bottom: 15px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
             }
         }
 
         @media (max-width: 480px) {
             .card {
-                padding: 20px;
+                padding: 15px;
             }
 
             .sector-grid {
@@ -611,27 +559,22 @@
             }
 
             .meter {
-                width: 180px;
-                height: 90px;
+                width: 150px;
+                height: 75px;
             }
 
             .meter-needle {
-                height: 80px;
+                height: 65px;
             }
 
             .meter-value {
-                font-size: 2rem;
+                font-size: 1.8rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header class="header">
-            <h1>⚡ ELITE MARKET DASHBOARD</h1>
-            <p class="header-subtitle">Real-time market intelligence • Professional grade analytics</p>
-        </header>
-
         <div class="market-status-bar" id="market-status-bar">
             <div class="status-item">
                 <div class="status-dot online" id="status-dot"></div>
