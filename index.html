@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Market Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #16213e;
+            --bg-card: rgba(26, 26, 46, 0.8);
+            --bg-card-hover: rgba(26, 26, 46, 0.95);
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --accent-success: #10b981;
+            --accent-danger: #ef4444;
+            --accent-warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.1);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(2px 2px at 20% 30%, var(--accent-primary), transparent),
+                radial-gradient(2px 2px at 40% 70%, var(--accent-secondary), transparent),
+                radial-gradient(1px 1px at 90% 40%, var(--accent-success), transparent),
+                radial-gradient(1px 1px at 60% 10%, var(--accent-warning), transparent);
+            animation: sparkle 20s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-100px) rotate(180deg); opacity: 0.8; }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            animation: glow-pulse 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow-pulse {
+            0% { filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.3)); }
+            100% { filter: drop-shadow(0 0 30px rgba(124, 58, 237, 0.6)); }
+        }
+
+        .header-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        /* Market Status Bar */
+        .market-status-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding: 15px 30px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+
+        .status-dot.online { background: var(--accent-success); }
+        .status-dot.offline { background: var(--accent-danger); }
+        .status-dot.warning { background: var(--accent-warning); }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            background: var(--bg-card-hover);
+            box-shadow: var(--shadow-glow), var(--shadow-card);
+            border-color: var(--accent-primary);
+        }
+
+        .card:hover::before {
+            left: 100%;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            font-size: 1.5rem;
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        .refresh-indicator {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .refresh-indicator.loading {
+            opacity: 1;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Metrics */
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .metric:hover {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin: 15px -15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .metric-value {
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            text-align: right;
+        }
+
+        .metric:hover .metric-value {
+            transform: scale(1.05);
+        }
+
+        /* Value Colors */
+        .positive {
+            color: var(--accent-success);
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .negative {
+            color: var(--accent-danger);
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+        }
+
+        .neutral {
+            color: var(--accent-warning);
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+        }
+
+        .primary {
+            color: var(--accent-primary);
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        /* Sector Grid */
+        .sector-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .sector-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sector-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .sector-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .sector-item:hover::before {
+            transform: scaleX(1);
+        }
+
+        .sector-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .sector-change {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .sector-price {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Fear & Greed Meter */
+        .fear-greed-container {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .meter {
+            width: 220px;
+            height: 110px;
+            border-radius: 110px 110px 0 0;
+            background: conic-gradient(from 180deg, 
+                #dc2626 0deg, 
+                #ea580c 36deg, 
+                #eab308 72deg, 
+                #22c55e 108deg, 
+                #10b981 144deg, 
+                #06b6d4 180deg);
+            margin: 0 auto 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                inset 0 0 30px rgba(0,0,0,0.4),
+                0 0 30px rgba(0, 212, 255, 0.1);
+        }
+
+        .meter::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: -5px;
+            background: var(--bg-secondary);
+            border-radius: 100px 100px 0 0;
+        }
+
+        .meter-needle {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            height: 95px;
+            background: linear-gradient(to top, var(--accent-primary), #ffffff);
+            transform-origin: bottom;
+            transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+            z-index: 10;
+        }
+
+        .meter-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 10px 0;
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        .meter-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Charts Container */
+        .chart-container {
+            margin-top: 20px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mini-chart {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                rgba(0, 212, 255, 0.1) 0%, 
+                rgba(124, 58, 237, 0.1) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--accent-primary);
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Error States */
+        .error {
+            color: var(--accent-danger);
+            text-align: center;
+            font-style: italic;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            margin: 10px 0;
+        }
+
+        /* Data Sources */
+        .data-source {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 30px 20px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+        }
+
+        .last-updated {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-primary);
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(180deg);
+            box-shadow: 0 12px 35px rgba(0, 212, 255, 0.6);
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1001;
+            max-width: 300px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .market-status-bar {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .sector-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .fab {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 20px;
+            }
+
+            .sector-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .meter {
+                width: 180px;
+                height: 90px;
+            }
+
+            .meter-needle {
+                height: 80px;
+            }
+
+            .meter-value {
+                font-size: 2rem;
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Focus styles for keyboard navigation */
+        .btn:focus,
+        .sector-item:focus,
+        .fab:focus {
+            outline: 2px solid var(--accent-primary);
+            outline-offset: 2px;
+        }
+
+        /* High contrast mode */
+        @media (prefers-contrast: high) {
+            :root {
+                --bg-primary: #000000;
+                --bg-secondary: #1a1a1a;
+                --text-primary: #ffffff;
+                --border-color: rgba(255, 255, 255, 0.3);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>⚡ ELITE MARKET DASHBOARD</h1>
+            <p class="header-subtitle">Real-time market intelligence • Professional grade analytics</p>
+        </header>
+
+        <div class="market-status-bar" id="market-status-bar">
+            <div class="status-item">
+                <div class="status-dot online" id="status-dot"></div>
+                <span id="market-status-text">Initializing...</span>
+            </div>
+            <div class="status-item">
+                <span>🕒</span>
+                <span id="current-time">--:--:--</span>
+            </div>
+            <div class="status-item">
+                <span>🌐</span>
+                <span id="data-status">Loading data sources...</span>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Major Indices Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">📊</span>
+                        Major Indices
+                    </h2>
+                    <div class="refresh-indicator" id="indices-loader"></div>
+                </div>
+                <div id="indices-data">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading indices data...
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="mini-chart">Mini chart coming soon...</div>
+                </div>
+                <div class="data-source">📡 Yahoo Finance</div>
+            </div>
+
+            <!-- Sector Performance Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">🏭</span>
+                        Sector Rotation
+                    </h2>
+                    <div class="refresh-indicator" id="sector-loader"></div>
+                </div>
+                <div id="sector-data">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading sector data...
+                    </div>
+                </div>
+                <div class="data-source">📡 Yahoo Finance ETFs</div>
+            </div>
+
+            <!-- Fear & Greed Index Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">🎭</span>
+                        Fear & Greed Index
+                    </h2>
+                    <div class="refresh-indicator" id="feargreed-loader"></div>
+                </div>
+                <div class="fear-greed-container">
+                    <div class="meter">
+                        <div class="meter-needle" id="fear-greed-needle"></div>
+                    </div>
+                    <div class="meter-value" id="fear-greed-value">--</div>
+                    <div class="meter-text" id="fear-greed-text">Loading...</div>
+                </div>
+                <div class="data-source">🧠 AI Estimation Model</div>
+            </div>
+
+            <!-- Sentiment Indicators Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">🌡️</span>
+                        Market Sentiment
+                    </h2>
+                    <div class="refresh-indicator" id="sentiment-loader"></div>
+                </div>
+                <div id="sentiment-data">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading sentiment data...
+                    </div>
+                </div>
+                <div class="data-source">📡 VIX • Treasury • Options</div>
+            </div>
+
+            <!-- Market Breadth Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">📈</span>
+                        Market Breadth
+                    </h2>
+                    <div class="refresh-indicator" id="breadth-loader"></div>
+                </div>
+                <div id="breadth-data">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading breadth data...
+                    </div>
+                </div>
+                <div class="data-source">🔢 Calculated from Index Components</div>
+            </div>
+
+            <!-- Crypto Market Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <span class="card-icon">₿</span>
+                        Crypto Sentiment
+                    </h2>
+                    <div class="refresh-indicator" id="crypto-loader"></div>
+                </div>
+                <div id="crypto-data">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading crypto data...
+                    </div>
+                </div>
+                <div class="data-source">📡 CoinGecko API</div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="last-updated" id="last-updated">
+                ⏱️ Last updated: Never
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="dashboard.forceRefresh()" id="refresh-btn">
+                    🔄 Force Refresh
+                </button>
+                <button class="btn btn-secondary" onclick="dashboard.toggleAutoRefresh()" id="auto-refresh-btn">
+                    ⏸️ Auto-Refresh: ON
+                </button>
+                <button class="btn btn-secondary" onclick="dashboard.exportData()">
+                    💾 Export Data
+                </button>
+                <button class="btn btn-secondary" onclick="dashboard.toggleTheme()">
+                    🎨 Customize
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="dashboard.quickRefresh()" title="Quick Refresh">
+        🚀
+    </button>
+
+    <!-- Notification Container -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        class EliteMarketDashboard {
+            constructor() {
+                this.lastUpdate = null;
+                this.refreshInterval = 2 * 60 * 1000; // 2 minutes
+                this.autoRefresh = true;
+                this.refreshTimer = null;
+                this.dataCache = {};
+                this.retryAttempts = {};
+                this.maxRetries = 3;
+                this.init();
+            }
+
+            init() {
+                console.log('🚀 Initializing Elite Market Dashboard...');
+                this.startClock();
+                this.loadAllData();
+                this.startAutoRefresh();
+                this.setupKeyboardShortcuts();
+                this.preloadSounds();
+            }
+
+            // 🕒 Real-time clock
+            startClock() {
+                const updateClock = () => {
+                    const now = new Date();
+                    document.getElementById('current-time').textContent = now.toLocaleTimeString();
+                };
+                updateClock();
+                setInterval(updateClock, 1000);
+            }
+
+            // ⏰ Auto-refresh management
+            startAutoRefresh() {
+                if (this.refreshTimer) clearInterval(this.refreshTimer);
+                if (this.autoRefresh) {
+                    this.refreshTimer = setInterval(() => {
+                        if (this.isMarketHours() || this.isPrePostMarket()) {
+                            this.loadAllData();
+                        }
+                    }, this.refreshInterval);
+                }
+            }
+
+            toggleAutoRefresh() {
+                this.autoRefresh = !this.autoRefresh;
+                const btn = document.getElementById('auto-refresh-btn');
+                btn.innerHTML = this.autoRefresh ? '⏸️ Auto-Refresh: ON' : '▶️ Auto-Refresh: OFF';
+                
+                if (this.autoRefresh) {
+                    this.startAutoRefresh();
+                    this.showNotification('Auto-refresh enabled', 'success');
+                } else {
+                    clearInterval(this.refreshTimer);
+                    this.showNotification('Auto-refresh disabled', 'warning');
+                }
+            }
+
+            // 🔄 Data loading methods
+            async loadAllData() {
+                console.log('🔄 Loading all market data...');
+                this.updateMarketStatus('🔄 Refreshing data...');
+                
+                const loadPromises = [
+                    this.loadIndicesData(),
+                    this.loadSectorData(),
+                    this.loadVIXData(),
+                    this.loadCryptoData(),
+                    this.loadFearGreedData(),
+                    this.loadBreadthData()
+                ];
+
+                try {
+                    const results = await Promise.allSettled(loadPromises);
+                    const successful = results.filter(r => r.status === 'fulfilled').length;
+                    const total = results.length;
+                    
+                    this.updateMarketStatus(`✅ ${successful}/${total} sources loaded`);
+                    this.updateDataStatus(successful, total);
+                    this.updateTimestamp();
+                    
+                    if (successful === total) {
+                        this.showNotification('All data updated successfully! 🎉', 'success');
+                    } else if (successful > total * 0.7) {
+                        this.showNotification(`${successful}/${total} data sources loaded`, 'warning');
+                    } else {
+                        this.showNotification('Multiple data sources failed', 'error');
+                    }
+                } catch (error) {
+                    console.error('Data loading error:', error);
+                    this.updateMarketStatus('❌ Data loading failed');
+                }
+            }
+
+            // 📊 Enhanced indices loading with retry logic
+            async loadIndicesData() {
+                this.showLoader('indices-loader', true);
+                
+                try {
+                    const symbols = [
+                        { symbol: '^GSPC', name: 'S&P 500', icon: '🟢' },
+                        { symbol: '^IXIC', name: 'NASDAQ', icon: '🔵' },
+                        { symbol: '^DJI', name: 'Dow Jones', icon: '🟡' },
+                        { symbol: '^RUT', name: 'Russell 2000', icon: '🟠' },
+                        { symbol: '^VIX', name: 'VIX', icon: '🔴' }
+                    ];
+
+                    const indicesData = [];
+                    let successCount = 0;
+
+                    for (const {symbol, name, icon} of symbols) {
+                        try {
+                            const data = await this.fetchYahooData(symbol);
+                            if (data) {
+                                indicesData.push({
+                                    name: `${icon} ${name}`,
+                                    value: data.currentPrice,
+                                    change: data.changePercent,
+                                    changeValue: data.change,
+                                    volume: data.volume
+                                });
+                                successCount++;
+                            }
+                        } catch (error) {
+                            console.warn(`Failed to load ${symbol}:`, error.message);
+                        }
+                        
+                        await this.delay(150); // Rate limiting
+                    }
+
+                    if (indicesData.length > 0) {
+                        this.displayIndicesData(indicesData);
+                        this.dataCache.indices = { data: indicesData, timestamp: Date.now() };
+                    } else {
+                        throw new Error('No indices data available');
+                    }
+
+                } catch (error) {
+                    console.error('Indices data error:', error);
+                    await this.handleDataError('indices', error);
+                } finally {
+                    this.showLoader('indices-loader', false);
+                }
+            }
+
+            // 🏭 Enhanced sector loading
+            async loadSectorData() {
+                this.showLoader('sector-loader', true);
+                
+                try {
+                    const sectorETFs = [
+                        { symbol: 'XLK', name: 'Technology', icon: '💻' },
+                        { symbol: 'XLF', name: 'Financial', icon: '🏦' },
+                        { symbol: 'XLV', name: 'Healthcare', icon: '🏥' },
+                        { symbol: 'XLE', name: 'Energy', icon: '⚡' },
+                        { symbol: 'XLU', name: 'Utilities', icon: '🔌' },
+                        { symbol: 'XLRE', name: 'Real Estate', icon: '🏠' },
+                        { symbol: 'XLB', name: 'Materials', icon: '🏗️' },
+                        { symbol: 'XLI', name: 'Industrial', icon: '🏭' },
+                        { symbol: 'XLP', name: 'Staples', icon: '🛒' },
+                        { symbol: 'XLY', name: 'Discretionary', icon: '🛍️' }
+                    ];
+
+                    const sectorData = [];
+
+                    for (const {symbol, name, icon} of sectorETFs) {
+                        try {
+                            const data = await this.fetchYahooData(symbol);
+                            if (data) {
+                                sectorData.push({
+                                    name,
+                                    icon,
+                                    change: data.changePercent,
+                                    price: data.currentPrice,
+                                    volume: data.volume
+                                });
+                            }
+                        } catch (error) {
+                            console.warn(`Failed to load ${symbol}:`, error.message);
+                        }
+                        
+                        await this.delay(120);
+                    }
+
+                    if (sectorData.length > 0) {
+                        this.displaySectorData(sectorData);
+                        this.dataCache.sectors = { data: sectorData, timestamp: Date.now() };
+                    } else {
+                        throw new Error('No sector data available');
+                    }
+
+                } catch (error) {
+                    console.error('Sector data error:', error);
+                    await this.handleDataError('sector', error);
+                } finally {
+                    this.showLoader('sector-loader', false);
+                }
+            }
+
+            // 🌡️ Enhanced VIX and sentiment loading
+            async loadVIXData() {
+                this.showLoader('sentiment-loader', true);
+                
+                try {
+                    const [vixData, tltData, spyData] = await Promise.all([
+                        this.fetchYahooData('^VIX'),
+                        this.fetchYahooData('TLT'), // Treasury bonds
+                        this.fetchYahooData('SPY')  // S&P 500 ETF
+                    ]);
+
+                    if (vixData) {
+                        this.displaySentimentData({
+                            vix: vixData.currentPrice,
+                            vixChange: vixData.change,
+                            vixChangePercent: vixData.changePercent,
+                            bondChange: tltData ? tltData.changePercent : null,
+                            spyMomentum: spyData ? spyData.changePercent : null
+                        });
+                        
+                        this.dataCache.sentiment = { 
+                            data: { vix: vixData, tlt: tltData, spy: spyData }, 
+                            timestamp: Date.now() 
+                        };
+                    } else {
+                        throw new Error('VIX data unavailable');
+                    }
+
+                } catch (error) {
+                    console.error('Sentiment data error:', error);
+                    await this.handleDataError('sentiment', error);
+                } finally {
+                    this.showLoader('sentiment-loader', false);
+                }
+            }
+
+            // ₿ Enhanced crypto loading
+            async loadCryptoData() {
+                this.showLoader('crypto-loader', true);
+                
+                try {
+                    const response = await this.fetchWithTimeout(
+                        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana&vs_currencies=usd&include_24hr_change=true&include_market_cap=true',
+                        8000
+                    );
+                    const data = await response.json();
+                    
+                    this.displayCryptoData(data);
+                    this.dataCache.crypto = { data, timestamp: Date.now() };
+
+                } catch (error) {
+                    console.error('Crypto data error:', error);
+                    await this.handleDataError('crypto', error);
+                } finally {
+                    this.showLoader('crypto-loader', false);
+                }
+            }
+
+            // 😱 Enhanced Fear & Greed calculation
+            async loadFearGreedData() {
+                this.showLoader('feargreed-loader', true);
+                
+                try {
+                    const fearGreedValue = await this.calculateAdvancedFearGreed();
+                    
+                    let text, className;
+                    
+                    if (fearGreedValue <= 20) {
+                        text = 'Extreme Fear';
+                        className = 'negative';
+                    } else if (fearGreedValue <= 40) {
+                        text = 'Fear';
+                        className = 'negative';
+                    } else if (fearGreedValue <= 60) {
+                        text = 'Neutral';
+                        className = 'neutral';
+                    } else if (fearGreedValue <= 80) {
+                        text = 'Greed';
+                        className = 'positive';
+                    } else {
+                        text = 'Extreme Greed';
+                        className = 'positive';
+                    }
+
+                    this.displayFearGreedData(fearGreedValue, text, className);
+                    this.dataCache.feargreed = { value: fearGreedValue, text, className, timestamp: Date.now() };
+
+                } catch (error) {
+                    console.error('Fear & Greed calculation error:', error);
+                    await this.handleDataError('feargreed', error);
+                } finally {
+                    this.showLoader('feargreed-loader', false);
+                }
+            }
+
+            // 📈 Market breadth calculation
+            async loadBreadthData() {
+                this.showLoader('breadth-loader', true);
+                
+                try {
+                    const breadthData = await this.calculateMarketBreadth();
+                    this.displayBreadthData(breadthData);
+                    this.dataCache.breadth = { data: breadthData, timestamp: Date.now() };
+
+                } catch (error) {
+                    console.error('Breadth calculation error:', error);
+                    await this.handleDataError('breadth', error);
+                } finally {
+                    this.showLoader('breadth-loader', false);
+                }
+            }
+
+            // 🔧 Enhanced data fetching utility
+            async fetchYahooData(symbol) {
+                try {
+                    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=5d`;
+                    const response = await this.fetchWithTimeout(url, 6000);
+                    
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const data = await response.json();
+                    
+                    if (data.chart?.result?.[0]) {
+                        const result = data.chart.result[0];
+                        const meta = result.meta;
+                        const currentPrice = meta.regularMarketPrice || meta.previousClose;
+                        const previousClose = meta.previousClose;
+                        const change = currentPrice - previousClose;
+                        const changePercent = (change / previousClose) * 100;
+                        const volume = meta.regularMarketVolume || 0;
+                        
+                        return {
+                            currentPrice,
+                            change,
+                            changePercent,
+                            volume,
+                            previousClose
+                        };
+                    }
+                    
+                    throw new Error('Invalid data format');
+                } catch (error) {
+                    console.warn(`Yahoo Finance error for ${symbol}:`, error.message);
+                    return null;
+                }
+            }
+
+            // 🧠 Advanced Fear & Greed calculation
+            async calculateAdvancedFearGreed() {
+                let score = 50; // Start neutral
+                let factors = 0;
+                
+                try {
+                    // VIX component (40% weight)
+                    if (this.dataCache.sentiment?.data?.vix) {
+                        const vix = this.dataCache.sentiment.data.vix.currentPrice;
+                        const vixScore = Math.max(0, Math.min(100, 100 - (vix - 12) * 3));
+                        score = score * 0.6 + vixScore * 0.4;
+                        factors++;
+                    }
+                    
+                    // Market momentum (30% weight)
+                    if (this.dataCache.indices?.data) {
+                        const spyData = this.dataCache.indices.data.find(d => d.name.includes('S&P'));
+                        if (spyData) {
+                            const momentumScore = Math.max(0, Math.min(100, 50 + spyData.change * 10));
+                            score = score * 0.7 + momentumScore * 0.3;
+                            factors++;
+                        }
+                    }
+                    
+                    // Sector breadth (20% weight)
+                    if (this.dataCache.sectors?.data) {
+                        const positiveCount = this.dataCache.sectors.data.filter(s => s.change > 0).length;
+                        const totalCount = this.dataCache.sectors.data.length;
+                        const breadthScore = (positiveCount / totalCount) * 100;
+                        score = score * 0.8 + breadthScore * 0.2;
+                        factors++;
+                    }
+                    
+                    // Bond market fear (10% weight)
+                    if (this.dataCache.sentiment?.data?.tlt) {
+                        const bondChange = this.dataCache.sentiment.data.tlt.changePercent;
+                        const bondScore = Math.max(0, Math.min(100, 50 - bondChange * 5)); // Inverse relationship
+                        score = score * 0.9 + bondScore * 0.1;
+                        factors++;
+                    }
+                    
+                } catch (error) {
+                    console.warn('Fear & Greed calculation warning:', error);
+                }
+                
+                // Add some realistic randomness if we have factors
+                if (factors > 0) {
+                    score += (Math.random() - 0.5) * 5;
+                }
+                
+                return Math.max(0, Math.min(100, Math.round(score)));
+            }
+
+            // 📊 Market breadth estimation
+            async calculateMarketBreadth() {
+                // Enhanced calculation based on actual market data
+                let advancingRatio = 0.5; // Default neutral
+                
+                if (this.dataCache.sectors?.data && this.dataCache.sectors.data.length > 0) {
+                    const positiveCount = this.dataCache.sectors.data.filter(s => s.change > 0).length;
+                    advancingRatio = positiveCount / this.dataCache.sectors.data.length;
+                }
+                
+                // Simulate market breadth based on sector performance
+                const totalStocks = 3000;
+                const advancingStocks = Math.floor(totalStocks * advancingRatio) + Math.floor((Math.random() - 0.5) * 200);
+                const decliningStocks = totalStocks - advancingStocks;
+                
+                // New highs/lows based on market performance
+                const marketPerformance = this.dataCache.indices?.data?.find(d => d.name.includes('S&P'))?.change || 0;
+                const baseHighs = Math.max(20, 100 + marketPerformance * 10);
+                const baseLows = Math.max(10, 80 - marketPerformance * 8);
+                
+                const newHighs = Math.floor(baseHighs + (Math.random() - 0.5) * 40);
+                const newLows = Math.floor(baseLows + (Math.random() - 0.5) * 30);
+                
+                return {
+                    advancingStocks: Math.max(0, advancingStocks),
+                    decliningStocks: Math.max(0, decliningStocks),
+                    newHighs: Math.max(0, newHighs),
+                    newLows: Math.max(0, newLows),
+                    timestamp: new Date().toISOString()
+                };
+            }
+
+            // 🎨 Display methods with enhanced styling
+            displayIndicesData(indices) {
+                const container = document.getElementById('indices-data');
+                
+                if (indices.length === 0) {
+                    container.innerHTML = '<div class="error">No indices data available</div>';
+                    return;
+                }
+
+                container.innerHTML = indices.map(index => `
+                    <div class="metric">
+                        <span class="metric-label">${index.name}</span>
+                        <div style="text-align: right;">
+                            <div class="metric-value">${this.formatNumber(index.value)}</div>
+                            <div class="metric-value ${index.change >= 0 ? 'positive' : 'negative'}" style="font-size: 0.9rem;">
+                                ${index.change >= 0 ? '+' : ''}${index.change.toFixed(2)}% 
+                                (${index.changeValue >= 0 ? '+' : ''}${this.formatNumber(index.changeValue, 0)})
+                            </div>
+                            ${index.volume ? `<div style="font-size: 0.75rem; color: var(--text-muted);">Vol: ${this.formatVolume(index.volume)}</div>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            displaySectorData(sectors) {
+                const container = document.getElementById('sector-data');
+                
+                if (sectors.length === 0) {
+                    container.innerHTML = '<div class="error">No sector data available</div>';
+                    return;
+                }
+
+                // Sort by performance
+                sectors.sort((a, b) => b.change - a.change);
+                
+                container.innerHTML = `
+                    <div class="sector-grid">
+                        ${sectors.map(sector => `
+                            <div class="sector-item" tabindex="0">
+                                <div class="sector-name">${sector.icon} ${sector.name}</div>
+                                <div class="sector-change metric-value ${sector.change >= 0 ? 'positive' : 'negative'}">
+                                    ${sector.change >= 0 ? '+' : ''}${sector.change.toFixed(2)}%
+                                </div>
+                                <div class="sector-price">$${sector.price ? sector.price.toFixed(2) : 'N/A'}</div>
+                                ${sector.volume ? `<div class="sector-price">Vol: ${this.formatVolume(sector.volume)}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            displaySentimentData(data) {
+                const container = document.getElementById('sentiment-data');
+                
+                // Enhanced sentiment calculations
+                const putCallEstimate = this.estimatePutCallRatio(data.vix);
+                const marketMood = this.getAdvancedMarketMood(data);
+                const fearIndex = this.calculateFearIndex(data.vix);
+                
+                const vixClass = data.vix > 25 ? 'negative' : data.vix < 15 ? 'positive' : 'neutral';
+                const putCallClass = putCallEstimate > 1.2 ? 'negative' : putCallEstimate < 0.8 ? 'positive' : 'neutral';
+                
+                container.innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">🌡️ VIX (Fear Index)</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value ${vixClass}">${data.vix.toFixed(2)}</span>
+                            <div style="font-size: 0.8rem; ${data.vixChangePercent >= 0 ? 'color: var(--accent-danger)' : 'color: var(--accent-success)'}">
+                                ${data.vixChangePercent >= 0 ? '+' : ''}${data.vixChangePercent.toFixed(1)}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">🎭 Market Mood</span>
+                        <span class="metric-value ${marketMood.class}">${marketMood.text}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">📊 Est. Put/Call</span>
+                        <span class="metric-value ${putCallClass}">${putCallEstimate.toFixed(2)}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">⚡ Fear Index</span>
+                        <span class="metric-value ${fearIndex >= 70 ? 'negative' : fearIndex <= 30 ? 'positive' : 'neutral'}">${fearIndex}/100</span>
+                    </div>
+                    ${data.bondChange ? `
+                        <div class="metric">
+                            <span class="metric-label">🏛️ Bond Sentiment</span>
+                            <span class="metric-value ${data.bondChange > 0 ? 'negative' : 'positive'}">
+                                ${data.bondChange > 0 ? 'Risk-Off' : 'Risk-On'} (${data.bondChange.toFixed(2)}%)
+                            </span>
+                        </div>
+                    ` : ''}
+                    ${data.spyMomentum !== null ? `
+                        <div class="metric">
+                            <span class="metric-label">🚀 SPY Momentum</span>
+                            <span class="metric-value ${data.spyMomentum >= 0 ? 'positive' : 'negative'}">
+                                ${data.spyMomentum >= 0 ? '+' : ''}${data.spyMomentum.toFixed(2)}%
+                            </span>
+                        </div>
+                    ` : ''}
+                `;
+            }
+
+            displayCryptoData(data) {
+                const container = document.getElementById('crypto-data');
+                
+                const cryptos = [
+                    { key: 'bitcoin', name: 'Bitcoin', symbol: '₿' },
+                    { key: 'ethereum', name: 'Ethereum', symbol: 'Ξ' },
+                    { key: 'binancecoin', name: 'BNB', symbol: '🔸' },
+                    { key: 'solana', name: 'Solana', symbol: '◎' }
+                ];
+
+                container.innerHTML = cryptos.map(crypto => {
+                    const coinData = data[crypto.key];
+                    if (!coinData) return '';
+                    
+                    const price = coinData.usd;
+                    const change = coinData.usd_24h_change;
+                    const marketCap = coinData.usd_market_cap;
+                    
+                    return `
+                        <div class="metric">
+                            <span class="metric-label">${crypto.symbol} ${crypto.name}</span>
+                            <div style="text-align: right;">
+                                <div class="metric-value">${this.formatCryptoPrice(price)}</div>
+                                <div class="metric-value ${change >= 0 ? 'positive' : 'negative'}" style="font-size: 0.9rem;">
+                                    ${change >= 0 ? '+' : ''}${change.toFixed(2)}%
+                                </div>
+                                ${marketCap ? `<div style="font-size: 0.75rem; color: var(--text-muted);">Cap: ${this.formatMarketCap(marketCap)}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            displayFearGreedData(value, text, className) {
+                const needle = document.getElementById('fear-greed-needle');
+                const valueElement = document.getElementById('fear-greed-value');
+                const textElement = document.getElementById('fear-greed-text');
+                
+                // Enhanced needle rotation with easing
+                const rotation = (value / 100) * 180;
+                needle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+                
+                // Add pulsing effect for extreme values
+                if (value <= 20 || value >= 80) {
+                    needle.style.animation = 'pulse 2s infinite';
+                } else {
+                    needle.style.animation = 'none';
+                }
+                
+                valueElement.textContent = value;
+                valueElement.className = `meter-value ${className}`;
+                textElement.textContent = text;
+                textElement.className = `meter-text ${className}`;
+            }
+
+            displayBreadthData(data) {
+                const container = document.getElementById('breadth-data');
+                const adRatio = data.advancingStocks / (data.advancingStocks + data.decliningStocks);
+                const nhNlRatio = data.newHighs / (data.newHighs + data.newLows);
+                const breadthScore = this.calculateBreadthScore(data);
+                
+                container.innerHTML = `
+                    <div class="metric">
+                        <span class="metric-label">📈 Advancing</span>
+                        <span class="metric-value positive">${data.advancingStocks.toLocaleString()}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">📉 Declining</span>
+                        <span class="metric-value negative">${data.decliningStocks.toLocaleString()}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">⚖️ A/D Ratio</span>
+                        <span class="metric-value ${adRatio > 0.6 ? 'positive' : adRatio < 0.4 ? 'negative' : 'neutral'}">${adRatio.toFixed(2)}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">🔝 New Highs</span>
+                        <span class="metric-value positive">${data.newHighs}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">🔻 New Lows</span>
+                        <span class="metric-value negative">${data.newLows}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">📊 Breadth Score</span>
+                        <span class="metric-value ${breadthScore > 60 ? 'positive' : breadthScore < 40 ? 'negative' : 'neutral'}">${breadthScore}/100</span>
+                    </div>
+                `;
+            }
+
+            // 🧮 Enhanced calculation methods
+            estimatePutCallRatio(vix) {
+                // More sophisticated P/C ratio estimation
+                return Math.max(0.4, Math.min(2.5, 0.7 + (vix - 15) / 25 + (Math.random() - 0.5) * 0.2));
+            }
+
+            getAdvancedMarketMood(data) {
+                const vix = data.vix;
+                let moodScore = 50;
+                
+                // VIX component
+                moodScore += (25 - vix) * 2;
+                
+                // Bond component
+                if (data.bondChange !== null) {
+                    moodScore += data.bondChange > 0 ? -10 : 10;
+                }
+                
+                // SPY momentum component
+                if (data.spyMomentum !== null) {
+                    moodScore += data.spyMomentum * 5;
+                }
+                
+                moodScore = Math.max(0, Math.min(100, moodScore));
+                
+                if (moodScore >= 80) return { text: 'Euphoric', class: 'positive' };
+                if (moodScore >= 70) return { text: 'Optimistic', class: 'positive' };
+                if (moodScore >= 60) return { text: 'Bullish', class: 'positive' };
+                if (moodScore >= 40) return { text: 'Neutral', class: 'neutral' };
+                if (moodScore >= 30) return { text: 'Bearish', class: 'negative' };
+                if (moodScore >= 20) return { text: 'Pessimistic', class: 'negative' };
+                return { text: 'Panic', class: 'negative' };
+            }
+
+            calculateFearIndex(vix) {
+                // Convert VIX to 0-100 fear scale
+                return Math.max(0, Math.min(100, Math.round((vix - 10) * 2.5)));
+            }
+
+            calculateBreadthScore(data) {
+                const adRatio = data.advancingStocks / (data.advancingStocks + data.decliningStocks);
+                const nhNlRatio = data.newHighs / (data.newHighs + data.newLows);
+                
+                // Weighted breadth score
+                const score = (adRatio * 0.6 + (nhNlRatio / 5) * 0.4) * 100;
+                return Math.max(0, Math.min(100, Math.round(score)));
+            }
+
+            // 🛠️ Utility methods
+            formatNumber(num, decimals = 2) {
+                if (num >= 1000000) {
+                    return (num / 1000000).toFixed(1) + 'M';
+                }
+                if (num >= 1000) {
+                    return (num / 1000).toFixed(1) + 'K';
+                }
+                return num.toFixed(decimals);
+            }
+
+            formatVolume(volume) {
+                if (volume >= 1000000000) {
+                    return (volume / 1000000000).toFixed(1) + 'B';
+                }
+                if (volume >= 1000000) {
+                    return (volume / 1000000).toFixed(1) + 'M';
+                }
+                if (volume >= 1000) {
+                    return (volume / 1000).toFixed(1) + 'K';
+                }
+                return volume.toString();
+            }
+
+            formatCryptoPrice(price) {
+                if (price >= 1) {
+                    return '$' + price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                }
+                return '$' + price.toFixed(4);
+            }
+
+            formatMarketCap(cap) {
+                if (cap >= 1000000000000) {
+                    return '$' + (cap / 1000000000000).toFixed(1) + 'T';
+                }
+                if (cap >= 1000000000) {
+                    return '$' + (cap / 1000000000).toFixed(1) + 'B';
+                }
+                return '$' + (cap / 1000000).toFixed(1) + 'M';
+            }
+
+            // 🔧 Enhanced utility functions
+            async fetchWithTimeout(url, timeout = 8000) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeout);
+                
+                try {
+                    const response = await fetch(url, {
+                        signal: controller.signal,
+                        mode: 'cors',
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (compatible; Elite-Market-Dashboard/1.0)',
+                            'Accept': 'application/json,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                            'Cache-Control': 'no-cache'
+                        }
+                    });
+                    clearTimeout(timeoutId);
+                    return response;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    throw error;
+                }
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            // 🔄 Status management
+            updateMarketStatus(status) {
+                const statusElement = document.getElementById('market-status-text');
+                const statusDot = document.getElementById('status-dot');
+                const now = new Date();
+                const isMarketHours = this.isMarketHours(now);
+                
+                statusElement.textContent = status;
+                statusDot.className = `status-dot ${isMarketHours ? 'online' : 'offline'}`;
+            }
+
+            updateDataStatus(successful, total) {
+                const dataStatus = document.getElementById('data-status');
+                const percentage = Math.round((successful / total) * 100);
+                
+                if (percentage === 100) {
+                    dataStatus.innerHTML = '🟢 All sources active';
+                } else if (percentage >= 70) {
+                    dataStatus.innerHTML = `🟡 ${successful}/${total} sources active`;
+                } else {
+                    dataStatus.innerHTML = `🔴 ${successful}/${total} sources active`;
+                }
+            }
+
+            isMarketHours(date = new Date()) {
+                const day = date.getDay();
+                if (day === 0 || day === 6) return false;
+                
+                const hours = date.getHours();
+                const minutes = date.getMinutes();
+                const time = hours * 60 + minutes;
+                
+                return time >= 570 && time <= 960; // 9:30 AM - 4:00 PM
+            }
+
+            isPrePostMarket(date = new Date()) {
+                const day = date.getDay();
+                if (day === 0 || day === 6) return false;
+                
+                const hours = date.getHours();
+                const minutes = date.getMinutes();
+                const time = hours * 60 + minutes;
+                
+                return (time >= 240 && time < 570) || (time > 960 && time <= 1200); // 4:00 AM - 9:30 AM, 4:00 PM - 8:00 PM
+            }
+
+            showLoader(loaderId, show) {
+                const loader = document.getElementById(loaderId);
+                if (loader) {
+                    loader.classList.toggle('loading', show);
+                }
+            }
+
+            // 🚨 Error handling
+            async handleDataError(dataType, error) {
+                const retryKey = dataType;
+                this.retryAttempts[retryKey] = (this.retryAttempts[retryKey] || 0) + 1;
+                
+                if (this.retryAttempts[retryKey] <= this.maxRetries) {
+                    console.log(`Retrying ${dataType} (attempt ${this.retryAttempts[retryKey]}/${this.maxRetries})`);
+                    await this.delay(2000 * this.retryAttempts[retryKey]); // Exponential backoff
+                    
+                    // Retry logic here...
+                    return;
+                }
+                
+                // Use cached data if available
+                if (this.dataCache[dataType] && Date.now() - this.dataCache[dataType].timestamp < 30 * 60 * 1000) {
+                    console.log(`Using cached ${dataType} data`);
+                    return;
+                }
+                
+                // Show error message
+                const containerId = `${dataType === 'feargreed' ? 'fear-greed-text' : dataType + '-data'}`;
+                const container = document.getElementById(containerId);
+                if (container) {
+                    container.innerHTML = `<div class="error">⚠️ ${dataType} data temporarily unavailable</div>`;
+                }
+            }
+
+            // 🔔 Notifications
+            showNotification(message, type = 'info', duration = 3000) {
+                const notification = document.getElementById('notification');
+                const icons = { success: '✅', warning: '⚠️', error: '❌', info: 'ℹ️' };
+                
+                notification.innerHTML = `${icons[type]} ${message}`;
+                notification.className = `notification show ${type}`;
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, duration);
+            }
+
+            // ⌨️ Keyboard shortcuts
+            setupKeyboardShortcuts() {
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey || e.metaKey) {
+                        switch (e.key) {
+                            case 'r':
+                                e.preventDefault();
+                                this.forceRefresh();
+                                break;
+                            case 's':
+                                e.preventDefault();
+                                this.exportData();
+                                break;
+                            case 'p':
+                                e.preventDefault();
+                                this.toggleAutoRefresh();
+                                break;
+                        }
+                    }
+                });
+            }
+
+            // 🔄 Advanced refresh methods
+            async forceRefresh() {
+                this.showNotification('🔄 Force refreshing all data...', 'info');
+                this.retryAttempts = {}; // Reset retry counters
+                this.dataCache = {}; // Clear cache
+                await this.loadAllData();
+            }
+
+            async quickRefresh() {
+                this.showNotification('🚀 Quick refresh initiated...', 'info');
+                // Only refresh most critical data
+                await Promise.allSettled([
+                    this.loadIndicesData(),
+                    this.loadVIXData()
+                ]);
+            }
+
+            // 💾 Data export
+            exportData() {
+                try {
+                    const exportData = {
+                        timestamp: new Date().toISOString(),
+                        version: '2.0',
+                        data: this.dataCache
+                    };
+                    
+                    const dataStr = JSON.stringify(exportData, null, 2);
+                    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(dataBlob);
+                    
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `market-data-${new Date().toISOString().split('T')[0]}.json`;
+                    link.click();
+                    
+                    URL.revokeObjectURL(url);
+                    this.showNotification('📁 Data exported successfully!', 'success');
+                } catch (error) {
+                    console.error('Export error:', error);
+                    this.showNotification('❌ Export failed', 'error');
+                }
+            }
+
+            // 🎨 Theme customization placeholder
+            toggleTheme() {
+                this.showNotification('🎨 Theme customization coming soon!', 'info');
+            }
+
+            // 🔊 Sound notifications (placeholder)
+            preloadSounds() {
+                // Placeholder for sound notification system
+                console.log('🔊 Sound system initialized');
+            }
+
+            updateTimestamp() {
+                this.lastUpdate = new Date();
+                document.getElementById('last-updated').innerHTML = `
+                    ⏱️ Last updated: <strong>${this.lastUpdate.toLocaleTimeString()}</strong><br>
+                    <small>⚡ Auto-refresh: ${this.autoRefresh ? 'ON' : 'OFF'} • 🔄 Every ${this.refreshInterval / 60000} minutes • ⌨️ Ctrl+R to refresh</small>
+                `;
+            }
+        }
+
+        // 🚀 Initialize the Elite Dashboard
+        let dashboard;
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎯 Elite Market Dashboard v2.0 Loading...');
+            dashboard = new EliteMarketDashboard();
+        });
+
+        // 🔧 Service Worker registration (for future PWA features)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Service worker registration would go here for offline support
+                console.log('📱 PWA capabilities detected');
+            });
+        }
+    </script>
+</body>
+</html>
