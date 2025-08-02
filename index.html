@@ -555,163 +555,6 @@
             transform: translateX(0);
         }
 
-        /* API Key Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 2000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-        }
-
-        .modal.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border-radius: 15px;
-            padding: 30px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-card);
-            max-width: 500px;
-            width: 90%;
-            position: relative;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--accent-primary);
-            margin: 0;
-        }
-
-        .close {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-
-        .close:hover {
-            color: var(--accent-primary);
-        }
-
-        .modal-body {
-            margin: 20px 0;
-        }
-
-        .modal-body p {
-            margin-bottom: 15px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        .modal-body ol {
-            color: var(--text-secondary);
-            margin-left: 20px;
-            margin-bottom: 20px;
-        }
-
-        .modal-body ol li {
-            margin-bottom: 8px;
-        }
-
-        .modal-body a {
-            color: var(--accent-primary);
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .modal-body a:hover {
-            text-decoration: underline;
-        }
-
-        .api-key-input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
-            font-size: 1rem;
-            margin: 10px 0;
-            transition: border-color 0.3s ease;
-        }
-
-        .api-key-input:focus {
-            outline: none;
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
-        }
-
-        .api-key-input::placeholder {
-            color: var(--text-muted);
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn-modal {
-            flex: 1;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-        }
-
-        .btn-modal-primary {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: white;
-        }
-
-        .btn-modal-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
-        }
-
-        .btn-modal-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-modal-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .current-key-status {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-            font-size: 0.9rem;
-        }
-
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -808,7 +651,7 @@
                         Loading indices data...
                     </div>
                 </div>
-                <div class="data-source">📡 Alpha Vantage • Yahoo Finance (Hybrid)</div>
+                <div class="data-source">📡 Yahoo Finance (Enhanced)</div>
             </div>
 
             <!-- Sector Performance Card -->
@@ -826,7 +669,7 @@
                         Loading sector data...
                     </div>
                 </div>
-                <div class="data-source">📡 Alpha Vantage • Yahoo Finance ETFs (Hybrid)</div>
+                <div class="data-source">📡 Yahoo Finance ETFs (Enhanced)</div>
             </div>
 
             <!-- Market Health Card -->
@@ -869,7 +712,7 @@
                         Loading sentiment data...
                     </div>
                 </div>
-                <div class="data-source">📡 VIX • Treasury • Options (Hybrid APIs)</div>
+                <div class="data-source">📡 VIX • Treasury • Options (Enhanced)</div>
             </div>
 
             <!-- Market Breadth Card -->
@@ -905,7 +748,7 @@
                         Loading bond data...
                     </div>
                 </div>
-                <div class="data-source">📡 Treasury Yields • Risk Sentiment (Hybrid APIs)</div>
+                <div class="data-source">📡 Treasury Yields • Risk Sentiment (Enhanced)</div>
             </div>
         </div>
 
@@ -923,9 +766,6 @@
                 <button class="btn btn-secondary" onclick="dashboard.exportData()">
                     💾 Export Data
                 </button>
-                <button class="btn btn-secondary" onclick="dashboard.showApiKeyInfo()">
-                    🔑 Setup API Key
-                </button>
             </div>
         </footer>
     </div>
@@ -938,51 +778,6 @@
     <!-- Notification Container -->
     <div class="notification" id="notification"></div>
 
-    <!-- API Key Setup Modal -->
-    <div id="apiModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">🔑 Alpha Vantage API Setup</h2>
-                <span class="close" onclick="dashboard.closeApiModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p><strong>Get your free API key for better data reliability:</strong></p>
-                
-                <ol>
-                    <li>Visit: <a href="https://www.alphavantage.co/support/#api-key" target="_blank">alphavantage.co/support/#api-key</a></li>
-                    <li>Fill out the simple form (takes 30 seconds)</li>
-                    <li>Check your email for the API key</li>
-                    <li>Paste your key below:</li>
-                </ol>
-
-                <div class="current-key-status">
-                    <strong>Current Status:</strong> <span id="currentKeyStatus">Using demo key (limited)</span>
-                </div>
-
-                <input 
-                    type="text" 
-                    id="apiKeyInput" 
-                    class="api-key-input" 
-                    placeholder="Paste your Alpha Vantage API key here..."
-                    maxlength="50"
-                >
-
-                <div class="modal-buttons">
-                    <button class="btn-modal btn-modal-primary" onclick="dashboard.saveApiKey()">
-                        💾 Save API Key
-                    </button>
-                    <button class="btn-modal btn-modal-secondary" onclick="dashboard.closeApiModal()">
-                        Cancel
-                    </button>
-                </div>
-
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 15px;">
-                    <strong>Benefits:</strong> 500 free calls/day • Better reliability • Real-time data • Works 24/7
-                </p>
-            </div>
-        </div>
-    </div>
-
     <script>
         class EliteMarketDashboard {
             constructor() {
@@ -994,24 +789,15 @@
                 this.retryAttempts = {};
                 this.maxRetries = 3;
                 this.timestamps = {}; // Track individual data timestamps
-                this.apiKeys = {
-                    alphaVantage: 'demo', // Users can replace with their own key
-                };
-                this.apiCallCount = {
-                    alphaVantage: 0,
-                    yahoo: 0
-                };
                 this.init();
             }
 
             init() {
                 console.log('🚀 Initializing Elite Market Dashboard...');
-                this.loadSavedApiKey(); // Load saved API key first
                 this.startClock();
                 this.loadAllData();
                 this.startAutoRefresh();
                 this.setupKeyboardShortcuts();
-                this.setupModalHandlers();
             }
 
             // 🕒 Real-time clock
@@ -1104,7 +890,7 @@
 
                     for (const {symbol, name, icon, url} of symbols) {
                         try {
-                            const data = await this.fetchMarketDataHybrid(symbol);
+                            const data = await this.fetchYahooDataWithFallback(symbol);
                             if (data) {
                                 const timestamp = new Date().toLocaleTimeString();
                                 this.timestamps[symbol] = timestamp;
@@ -1124,7 +910,7 @@
                             console.warn(`Failed to load ${symbol}:`, error.message);
                         }
                         
-                        await this.delay(250); // Increased delay for API friendliness
+                        await this.delay(200); // Reasonable delay for API friendliness
                     }
 
                     // Only display real data - no fallbacks
@@ -1166,7 +952,7 @@
 
                     for (const {symbol, name, icon, url} of sectorETFs) {
                         try {
-                            const data = await this.fetchMarketDataHybrid(symbol);
+                            const data = await this.fetchYahooDataWithFallback(symbol);
                             if (data) {
                                 const timestamp = new Date().toLocaleTimeString();
                                 this.timestamps[symbol] = timestamp;
@@ -1185,7 +971,7 @@
                             console.warn(`Failed to load ${symbol}:`, error.message);
                         }
                         
-                        await this.delay(200); // Slightly longer delay for ETFs
+                        await this.delay(150); // Reasonable delay for ETFs
                     }
 
                     // Only display real data - no fallbacks
@@ -1211,9 +997,9 @@
                 
                 try {
                     const [vixData, tltData, spyData] = await Promise.all([
-                        this.fetchMarketDataHybrid('^VIX'),
-                        this.fetchMarketDataHybrid('TLT'),
-                        this.fetchMarketDataHybrid('SPY')
+                        this.fetchYahooDataWithFallback('^VIX'),
+                        this.fetchYahooDataWithFallback('TLT'),
+                        this.fetchYahooDataWithFallback('SPY')
                     ]);
 
                     const timestamp = new Date().toLocaleTimeString();
@@ -1311,7 +1097,7 @@
 
                     for (const {symbol, name, icon, url} of bondSymbols) {
                         try {
-                            const data = await this.fetchMarketDataHybrid(symbol);
+                            const data = await this.fetchYahooDataWithFallback(symbol);
                             if (data) {
                                 const timestamp = new Date().toLocaleTimeString();
                                 this.timestamps[symbol] = timestamp;
@@ -1329,7 +1115,7 @@
                             console.warn(`Failed to load ${symbol}:`, error.message);
                         }
                         
-                        await this.delay(300); // Longer delay for bond data
+                        await this.delay(200); // Reasonable delay for bond data
                     }
 
                     // Only display real bond data - no fallbacks
@@ -1366,113 +1152,23 @@
                 }
             }
 
-            // 🔧 Hybrid data fetching with multiple sources
-            async fetchMarketDataHybrid(symbol) {
-                const sources = [
-                    { name: 'alphaVantage', fetcher: () => this.fetchAlphaVantageData(symbol) },
-                    { name: 'yahoo', fetcher: () => this.fetchYahooDataWithFallback(symbol) }
-                ];
-
-                for (const source of sources) {
-                    try {
-                        console.log(`Trying ${source.name} for ${symbol}`);
-                        const data = await source.fetcher();
-                        if (data) {
-                            this.apiCallCount[source.name]++;
-                            console.log(`✅ ${source.name} success for ${symbol}`);
-                            return data;
-                        }
-                    } catch (error) {
-                        console.warn(`❌ ${source.name} failed for ${symbol}:`, error.message);
-                        continue;
-                    }
-                }
-
-                console.error(`All sources failed for ${symbol}`);
-                return null;
-            }
-
-            // 📊 Alpha Vantage API integration
-            async fetchAlphaVantageData(symbol) {
-                // Alpha Vantage symbol mapping
-                const symbolMap = {
-                    '^GSPC': 'SPY', // Use SPY as proxy for S&P 500
-                    '^IXIC': 'QQQ', // Use QQQ as proxy for NASDAQ
-                    '^DJI': 'DIA',  // Use DIA as proxy for Dow Jones
-                    '^RUT': 'IWM',  // Use IWM as proxy for Russell 2000
-                    'DX-Y.NYB': 'UUP', // Use UUP as proxy for Dollar Index
-                    '^TNX': 'TLT',  // Use TLT (inverse) as proxy for 10Y Treasury
-                    '^VIX': 'VXX'   // Use VXX as proxy for VIX
-                };
-
-                const mappedSymbol = symbolMap[symbol] || symbol;
-                
-                // Skip Alpha Vantage for some symbols that work better with Yahoo
-                const yahooOnlySymbols = ['^TYX', '^FVX', 'TLT'];
-                if (yahooOnlySymbols.includes(symbol)) {
-                    return null;
-                }
-
-                const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${mappedSymbol}&apikey=${this.apiKeys.alphaVantage}`;
-                
-                try {
-                    const response = await this.fetchWithTimeout(url, 8000);
-                    if (!response.ok) return null;
-                    
-                    const data = await response.json();
-                    const quote = data['Global Quote'];
-                    
-                    if (!quote || Object.keys(quote).length === 0) {
-                        return null;
-                    }
-
-                    const currentPrice = parseFloat(quote['05. price']);
-                    const previousClose = parseFloat(quote['08. previous close']);
-                    const change = currentPrice - previousClose;
-                    const changePercent = (change / previousClose) * 100;
-                    const volume = parseInt(quote['06. volume']) || 0;
-
-                    // Handle Treasury yield symbols differently
-                    if (symbol === '^TNX') {
-                        // For TNX, we need to invert TLT performance and estimate yield
-                        const estimatedYield = 4.5 - (changePercent * 0.1); // Rough inverse relationship
-                        return {
-                            currentPrice: Math.max(0, estimatedYield),
-                            change: -change * 0.05,
-                            changePercent: -changePercent * 0.1,
-                            volume: 0,
-                            previousClose: estimatedYield - (-change * 0.05)
-                        };
-                    }
-
-                    return {
-                        currentPrice,
-                        change,
-                        changePercent,
-                        volume,
-                        previousClose
-                    };
-
-                } catch (error) {
-                    console.warn(`Alpha Vantage error for ${symbol}:`, error.message);
-                    return null;
-                }
-            }
-
-            // 🔧 Enhanced data fetching with fallbacks
+            // 🔧 Enhanced Yahoo Finance data fetching with multiple endpoints
             async fetchYahooDataWithFallback(symbol) {
                 const endpoints = [
                     `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`,
-                    `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`
+                    `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=2d`,
+                    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`,
+                    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbol}`
                 ];
 
                 for (const url of endpoints) {
                     try {
-                        const response = await this.fetchWithTimeout(url, 4000);
+                        const response = await this.fetchWithTimeout(url, 6000);
                         if (!response.ok) continue;
                         
                         const data = await response.json();
                         
+                        // Handle chart API response
                         if (data.chart?.result?.[0]) {
                             const result = data.chart.result[0];
                             const meta = result.meta;
@@ -1490,13 +1186,32 @@
                                 previousClose
                             };
                         }
+                        
+                        // Handle quote API response
+                        if (data.quoteResponse?.result?.[0]) {
+                            const quote = data.quoteResponse.result[0];
+                            const currentPrice = quote.regularMarketPrice || quote.previousClose;
+                            const previousClose = quote.previousClose;
+                            const change = currentPrice - previousClose;
+                            const changePercent = (change / previousClose) * 100;
+                            const volume = quote.regularMarketVolume || 0;
+                            
+                            return {
+                                currentPrice,
+                                change,
+                                changePercent,
+                                volume,
+                                previousClose
+                            };
+                        }
+                        
                     } catch (error) {
                         console.warn(`Endpoint failed for ${symbol}:`, error.message);
                         continue;
                     }
                 }
 
-                // Return null if no data available - no fake data
+                console.error(`All Yahoo Finance endpoints failed for ${symbol}`);
                 return null;
             }
 
@@ -2222,10 +1937,9 @@
                 try {
                     const exportData = {
                         timestamp: new Date().toISOString(),
-                        version: '2.3-HybridAPI',
+                        version: '2.4-YahooFinance',
                         data: this.dataCache,
-                        timestamps: this.timestamps,
-                        apiUsage: this.apiCallCount
+                        timestamps: this.timestamps
                     };
                     
                     const dataStr = JSON.stringify(exportData, null, 2);
@@ -2247,11 +1961,9 @@
 
             updateTimestamp() {
                 this.lastUpdate = new Date();
-                const apiUsage = `Alpha Vantage: ${this.apiCallCount.alphaVantage} • Yahoo: ${this.apiCallCount.yahoo}`;
                 document.getElementById('last-updated').innerHTML = `
                     ⏱️ Last updated: <strong>${this.lastUpdate.toLocaleTimeString()}</strong><br>
-                    <small>⚡ Auto-refresh: ${this.autoRefresh ? 'ON' : 'OFF'} • 🔄 Every ${this.refreshInterval / 60000} minutes • ⌨️ Ctrl+R to refresh • 🖱️ Click data for sources</small><br>
-                    <small>📊 API Usage: ${apiUsage}</small>
+                    <small>⚡ Auto-refresh: ${this.autoRefresh ? 'ON' : 'OFF'} • 🔄 Every ${this.refreshInterval / 60000} minutes • ⌨️ Ctrl+R to refresh • 🖱️ Click data for sources</small>
                 `;
             }
         }
@@ -2259,17 +1971,8 @@
         // 🚀 Initialize the Elite Dashboard
         let dashboard;
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🎯 Elite Market Dashboard v2.3-HybridAPI Loading...');
+            console.log('🎯 Elite Market Dashboard v2.4-YahooFinance Loading...');
             dashboard = new EliteMarketDashboard();
-            
-            // Show API setup modal on first load if using demo key
-            setTimeout(() => {
-                if (dashboard.apiKeys.alphaVantage === 'demo') {
-                    dashboard.showNotification('💡 For better data reliability, consider adding your free API key!', 'info', 4000);
-                    // Uncomment the line below to auto-show the modal on first demo load
-                    // dashboard.showApiKeyInfo();
-                }
-            }, 3000);
         });
 
         // 🔧 Service Worker registration (for future PWA features)
