@@ -43,8 +43,6 @@
             position: relative;
         }
 
-
-
         .container {
             max-width: 1600px;
             margin: 0 auto;
@@ -52,8 +50,6 @@
             position: relative;
             z-index: 1;
         }
-
-
 
         /* Market Status Bar */
         .market-status-bar {
@@ -190,6 +186,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             transition: all 0.3s ease;
             position: relative;
+            cursor: pointer;
         }
 
         .metric:hover {
@@ -198,6 +195,7 @@
             padding: 8px 12px;
             margin: 10px -12px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transform: scale(1.02);
         }
 
         .metric:last-child {
@@ -219,6 +217,15 @@
 
         .metric:hover .metric-value {
             transform: scale(1.05);
+        }
+
+        /* Timestamp styles */
+        .metric-timestamp {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            display: block;
+            margin-top: 2px;
         }
 
         /* Value Colors */
@@ -302,7 +309,7 @@
             color: var(--text-muted);
         }
 
-        /* Fear & Greed Meter */
+        /* Enhanced Fear & Greed Meter */
         .fear-greed-container {
             text-align: center;
             padding: 15px 0;
@@ -364,6 +371,40 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
+        }
+
+        /* Market Health Grid */
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .health-metric {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .health-metric:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.02);
+        }
+
+        .health-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .health-value {
+            font-size: 1.1rem;
+            font-weight: 700;
         }
 
         /* Loading States */
@@ -570,6 +611,10 @@
             .meter-value {
                 font-size: 1.8rem;
             }
+
+            .health-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -627,14 +672,14 @@
                 <div class="data-source">📡 Yahoo Finance ETFs</div>
             </div>
 
-            <!-- Fear & Greed Index Card -->
+            <!-- Market Health Card -->
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">
-                        <span class="card-icon">🎭</span>
-                        Fear & Greed Index
+                        <span class="card-icon">🎯</span>
+                        Market Health
                     </h2>
-                    <div class="refresh-indicator" id="feargreed-loader"></div>
+                    <div class="refresh-indicator" id="health-loader"></div>
                 </div>
                 <div class="fear-greed-container">
                     <div class="meter">
@@ -643,7 +688,13 @@
                     <div class="meter-value" id="fear-greed-value">--</div>
                     <div class="meter-text" id="fear-greed-text">Loading...</div>
                 </div>
-                <div class="data-source">🧠 AI Estimation Model</div>
+                <div class="health-grid" id="health-metrics">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading health metrics...
+                    </div>
+                </div>
+                <div class="data-source">🧠 AI Market Analysis</div>
             </div>
 
             <!-- Sentiment Indicators Card -->
@@ -737,6 +788,7 @@
                 this.dataCache = {};
                 this.retryAttempts = {};
                 this.maxRetries = 3;
+                this.timestamps = {}; // Track individual data timestamps
                 this.init();
             }
 
@@ -794,7 +846,7 @@
                     this.loadSectorData(),
                     this.loadVIXData(),
                     this.loadBondData(),
-                    this.loadFearGreedData(),
+                    this.loadMarketHealthData(),
                     this.loadBreadthData()
                 ];
 
@@ -810,9 +862,9 @@
                     if (successful === total) {
                         this.showNotification('✅ All data loaded successfully!', 'success');
                     } else if (successful > total * 0.6) {
-                        this.showNotification(`⚠️ ${successful}/${total} data sources loaded (using fallbacks)`, 'warning');
+                        this.showNotification(`⚠️ ${successful}/${total} data sources loaded (some data unavailable)`, 'warning');
                     } else {
-                        this.showNotification('❌ Multiple sources failed (showing cached/mock data)', 'error');
+                        this.showNotification('❌ Multiple sources failed (limited data available)', 'error');
                     }
                 } catch (error) {
                     console.error('Data loading error:', error);
@@ -820,30 +872,38 @@
                 }
             }
 
-            // 📊 Enhanced indices loading with retry logic
+            // 📊 Enhanced indices loading with DXY and 10Y Treasury
             async loadIndicesData() {
                 this.showLoader('indices-loader', true);
                 
                 try {
                     const symbols = [
-                        { symbol: '^GSPC', name: 'S&P 500', icon: '🟢' },
-                        { symbol: '^IXIC', name: 'NASDAQ', icon: '🔵' },
-                        { symbol: '^DJI', name: 'Dow Jones', icon: '🟡' },
-                        { symbol: '^RUT', name: 'Russell 2000', icon: '🟠' }
+                        { symbol: '^GSPC', name: 'S&P 500', icon: '🟢', url: 'https://finance.yahoo.com/quote/%5EGSPC' },
+                        { symbol: '^IXIC', name: 'NASDAQ', icon: '🔵', url: 'https://finance.yahoo.com/quote/%5EIXIC' },
+                        { symbol: '^DJI', name: 'Dow Jones', icon: '🟡', url: 'https://finance.yahoo.com/quote/%5EDJI' },
+                        { symbol: '^RUT', name: 'Russell 2000', icon: '🟠', url: 'https://finance.yahoo.com/quote/%5ERUT' },
+                        { symbol: 'DX-Y.NYB', name: 'US Dollar Index', icon: '💵', url: 'https://finance.yahoo.com/quote/DX-Y.NYB' },
+                        { symbol: '^TNX', name: '10-Year Treasury', icon: '🏛️', url: 'https://finance.yahoo.com/quote/%5ETNX' }
                     ];
 
                     const indicesData = [];
 
-                    for (const {symbol, name, icon} of symbols) {
+                    for (const {symbol, name, icon, url} of symbols) {
                         try {
                             const data = await this.fetchYahooDataWithFallback(symbol);
                             if (data) {
+                                const timestamp = new Date().toLocaleTimeString();
+                                this.timestamps[symbol] = timestamp;
+                                
                                 indicesData.push({
                                     name: `${icon} ${name}`,
                                     value: data.currentPrice,
                                     change: data.changePercent,
                                     changeValue: data.change,
-                                    volume: data.volume
+                                    volume: data.volume,
+                                    timestamp: timestamp,
+                                    url: url,
+                                    symbol: symbol
                                 });
                             }
                         } catch (error) {
@@ -853,14 +913,10 @@
                         await this.delay(150);
                     }
 
-                    // Ensure we always have data to display
+                    // Only display real data - no fallbacks
                     if (indicesData.length === 0) {
-                        indicesData.push(
-                            { name: '🟢 S&P 500', value: 4150, change: 0.5, changeValue: 20.5, volume: 2500000 },
-                            { name: '🔵 NASDAQ', value: 12800, change: 0.8, changeValue: 95.2, volume: 1800000 },
-                            { name: '🟡 Dow Jones', value: 33500, change: 0.3, changeValue: 105.8, volume: 850000 },
-                            { name: '🟠 Russell 2000', value: 1950, change: -0.2, changeValue: -4.2, volume: 420000 }
-                        );
+                        document.getElementById('indices-data').innerHTML = '<div class="error">⚠️ Real-time data not available. Please try refreshing.</div>';
+                        return;
                     }
 
                     this.displayIndicesData(indicesData);
@@ -880,30 +936,35 @@
                 
                 try {
                     const sectorETFs = [
-                        { symbol: 'XLK', name: 'Technology', icon: '💻' },
-                        { symbol: 'XLF', name: 'Financial', icon: '🏦' },
-                        { symbol: 'XLV', name: 'Healthcare', icon: '🏥' },
-                        { symbol: 'XLE', name: 'Energy', icon: '⚡' },
-                        { symbol: 'XLU', name: 'Utilities', icon: '🔌' },
-                        { symbol: 'XLRE', name: 'Real Estate', icon: '🏠' },
-                        { symbol: 'XLB', name: 'Materials', icon: '🏗️' },
-                        { symbol: 'XLI', name: 'Industrial', icon: '🏭' },
-                        { symbol: 'XLP', name: 'Staples', icon: '🛒' },
-                        { symbol: 'XLY', name: 'Discretionary', icon: '🛍️' }
+                        { symbol: 'XLK', name: 'Technology', icon: '💻', url: 'https://finance.yahoo.com/quote/XLK' },
+                        { symbol: 'XLF', name: 'Financial', icon: '🏦', url: 'https://finance.yahoo.com/quote/XLF' },
+                        { symbol: 'XLV', name: 'Healthcare', icon: '🏥', url: 'https://finance.yahoo.com/quote/XLV' },
+                        { symbol: 'XLE', name: 'Energy', icon: '⚡', url: 'https://finance.yahoo.com/quote/XLE' },
+                        { symbol: 'XLU', name: 'Utilities', icon: '🔌', url: 'https://finance.yahoo.com/quote/XLU' },
+                        { symbol: 'XLRE', name: 'Real Estate', icon: '🏠', url: 'https://finance.yahoo.com/quote/XLRE' },
+                        { symbol: 'XLB', name: 'Materials', icon: '🏗️', url: 'https://finance.yahoo.com/quote/XLB' },
+                        { symbol: 'XLI', name: 'Industrial', icon: '🏭', url: 'https://finance.yahoo.com/quote/XLI' },
+                        { symbol: 'XLP', name: 'Staples', icon: '🛒', url: 'https://finance.yahoo.com/quote/XLP' },
+                        { symbol: 'XLY', name: 'Discretionary', icon: '🛍️', url: 'https://finance.yahoo.com/quote/XLY' }
                     ];
 
                     const sectorData = [];
 
-                    for (const {symbol, name, icon} of sectorETFs) {
+                    for (const {symbol, name, icon, url} of sectorETFs) {
                         try {
                             const data = await this.fetchYahooDataWithFallback(symbol);
                             if (data) {
+                                const timestamp = new Date().toLocaleTimeString();
+                                this.timestamps[symbol] = timestamp;
+                                
                                 sectorData.push({
                                     name,
                                     icon,
                                     change: data.changePercent,
                                     price: data.currentPrice,
-                                    volume: data.volume
+                                    volume: data.volume,
+                                    timestamp: timestamp,
+                                    url: url
                                 });
                             }
                         } catch (error) {
@@ -913,20 +974,10 @@
                         await this.delay(120);
                     }
 
-                    // Ensure we always have sector data
+                    // Only display real data - no fallbacks
                     if (sectorData.length === 0) {
-                        sectorData.push(
-                            { name: 'Technology', icon: '💻', change: 1.2, price: 180, volume: 5000000 },
-                            { name: 'Financial', icon: '🏦', change: 0.5, price: 38, volume: 8000000 },
-                            { name: 'Healthcare', icon: '🏥', change: 0.3, price: 125, volume: 3000000 },
-                            { name: 'Energy', icon: '⚡', change: -0.8, price: 65, volume: 6000000 },
-                            { name: 'Utilities', icon: '🔌', change: -0.2, price: 70, volume: 2000000 },
-                            { name: 'Real Estate', icon: '🏠', change: 0.1, price: 42, volume: 1500000 },
-                            { name: 'Materials', icon: '🏗️', change: 0.4, price: 85, volume: 2500000 },
-                            { name: 'Industrial', icon: '🏭', change: 0.6, price: 110, volume: 3500000 },
-                            { name: 'Staples', icon: '🛒', change: 0.2, price: 75, volume: 2000000 },
-                            { name: 'Discretionary', icon: '🛍️', change: 0.9, price: 155, volume: 4000000 }
-                        );
+                        document.getElementById('sector-data').innerHTML = '<div class="error">⚠️ Real-time sector data not available. Please try refreshing.</div>';
+                        return;
                     }
 
                     this.displaySectorData(sectorData);
@@ -951,14 +1002,23 @@
                         this.fetchYahooDataWithFallback('SPY')
                     ]);
 
-                    // Always display sentiment data, using fallbacks if needed
+                    const timestamp = new Date().toLocaleTimeString();
+
+                    // Only display sentiment data if we have real VIX data
                     const sentimentData = {
-                        vix: vixData ? vixData.currentPrice : 18.5,
-                        vixChange: vixData ? vixData.change : -0.2,
-                        vixChangePercent: vixData ? vixData.changePercent : -1.1,
+                        vix: vixData ? vixData.currentPrice : null,
+                        vixChange: vixData ? vixData.change : null,
+                        vixChangePercent: vixData ? vixData.changePercent : null,
                         bondChange: tltData ? tltData.changePercent : null,
-                        spyMomentum: spyData ? spyData.changePercent : null
+                        spyMomentum: spyData ? spyData.changePercent : null,
+                        timestamp: timestamp
                     };
+
+                    // Don't display if no real VIX data
+                    if (!vixData) {
+                        document.getElementById('sentiment-data').innerHTML = '<div class="error">⚠️ Real-time sentiment data not available. Please try refreshing.</div>';
+                        return;
+                    }
 
                     this.displaySentimentData(sentimentData);
                     this.dataCache.sentiment = { 
@@ -974,29 +1034,81 @@
                 }
             }
 
+            // 🎯 New Market Health data (replaces Fear & Greed with more comprehensive metrics)
+            async loadMarketHealthData() {
+                this.showLoader('health-loader', true);
+                
+                try {
+                    const healthScore = await this.calculateMarketHealthScore();
+                    
+                    // Don't display if we can't calculate with real data
+                    if (healthScore === null) {
+                        document.getElementById('health-metrics').innerHTML = '<div class="error">⚠️ Market health data not available. Requires real VIX data.</div>';
+                        document.getElementById('fear-greed-text').textContent = 'No Data';
+                        document.getElementById('fear-greed-value').textContent = '--';
+                        return;
+                    }
+                    
+                    const healthMetrics = await this.calculateHealthMetrics();
+                    
+                    let text, className;
+                    
+                    if (healthScore <= 20) {
+                        text = 'Critical';
+                        className = 'negative';
+                    } else if (healthScore <= 40) {
+                        text = 'Weak';
+                        className = 'negative';
+                    } else if (healthScore <= 60) {
+                        text = 'Neutral';
+                        className = 'neutral';
+                    } else if (healthScore <= 80) {
+                        text = 'Healthy';
+                        className = 'positive';
+                    } else {
+                        text = 'Excellent';
+                        className = 'positive';
+                    }
+
+                    this.displayMarketHealthData(healthScore, text, className, healthMetrics);
+                    this.dataCache.health = { score: healthScore, text, className, metrics: healthMetrics, timestamp: Date.now() };
+
+                } catch (error) {
+                    console.error('Market Health calculation error:', error);
+                    await this.handleDataError('health', error);
+                } finally {
+                    this.showLoader('health-loader', false);
+                }
+            }
+
             // 🏛️ Load Bond Market Data
             async loadBondData() {
                 this.showLoader('bond-loader', true);
                 
                 try {
                     const bondSymbols = [
-                        { symbol: '^TNX', name: '10-Year Treasury', icon: '📊' },
-                        { symbol: '^TYX', name: '30-Year Treasury', icon: '📈' },
-                        { symbol: '^FVX', name: '5-Year Treasury', icon: '📉' },
-                        { symbol: 'TLT', name: 'TLT (20+ Year)', icon: '🏛️' }
+                        { symbol: '^TNX', name: '10-Year Treasury', icon: '📊', url: 'https://finance.yahoo.com/quote/%5ETNX' },
+                        { symbol: '^TYX', name: '30-Year Treasury', icon: '📈', url: 'https://finance.yahoo.com/quote/%5ETYX' },
+                        { symbol: '^FVX', name: '5-Year Treasury', icon: '📉', url: 'https://finance.yahoo.com/quote/%5EFVX' },
+                        { symbol: 'TLT', name: 'TLT (20+ Year)', icon: '🏛️', url: 'https://finance.yahoo.com/quote/TLT' }
                     ];
 
                     const bondData = [];
 
-                    for (const {symbol, name, icon} of bondSymbols) {
+                    for (const {symbol, name, icon, url} of bondSymbols) {
                         try {
                             const data = await this.fetchYahooDataWithFallback(symbol);
                             if (data) {
+                                const timestamp = new Date().toLocaleTimeString();
+                                this.timestamps[symbol] = timestamp;
+                                
                                 bondData.push({
                                     name: `${icon} ${name}`,
                                     value: data.currentPrice,
                                     change: data.changePercent,
-                                    yield: symbol.includes('^') ? data.currentPrice : null
+                                    yield: symbol.includes('^') ? data.currentPrice : null,
+                                    timestamp: timestamp,
+                                    url: url
                                 });
                             }
                         } catch (error) {
@@ -1006,14 +1118,10 @@
                         await this.delay(200);
                     }
 
-                    // Add mock data if no real data loaded
+                    // Only display real bond data - no fallbacks
                     if (bondData.length === 0) {
-                        bondData.push(
-                            { name: '📊 10-Year Treasury', value: 4.25, change: 0.15, yield: 4.25 },
-                            { name: '📈 30-Year Treasury', value: 4.45, change: 0.08, yield: 4.45 },
-                            { name: '📉 5-Year Treasury', value: 4.10, change: 0.12, yield: 4.10 },
-                            { name: '🏛️ TLT (20+ Year)', value: 94.50, change: -0.25, yield: null }
-                        );
+                        document.getElementById('bond-data').innerHTML = '<div class="error">⚠️ Real-time bond data not available. Please try refreshing.</div>';
+                        return;
                     }
 
                     this.displayBondData(bondData);
@@ -1024,43 +1132,6 @@
                     await this.handleDataError('bond', error);
                 } finally {
                     this.showLoader('bond-loader', false);
-                }
-            }
-
-            // 😱 Enhanced Fear & Greed calculation
-            async loadFearGreedData() {
-                this.showLoader('feargreed-loader', true);
-                
-                try {
-                    const fearGreedValue = await this.calculateAdvancedFearGreed();
-                    
-                    let text, className;
-                    
-                    if (fearGreedValue <= 20) {
-                        text = 'Extreme Fear';
-                        className = 'negative';
-                    } else if (fearGreedValue <= 40) {
-                        text = 'Fear';
-                        className = 'negative';
-                    } else if (fearGreedValue <= 60) {
-                        text = 'Neutral';
-                        className = 'neutral';
-                    } else if (fearGreedValue <= 80) {
-                        text = 'Greed';
-                        className = 'positive';
-                    } else {
-                        text = 'Extreme Greed';
-                        className = 'positive';
-                    }
-
-                    this.displayFearGreedData(fearGreedValue, text, className);
-                    this.dataCache.feargreed = { value: fearGreedValue, text, className, timestamp: Date.now() };
-
-                } catch (error) {
-                    console.error('Fear & Greed calculation error:', error);
-                    await this.handleDataError('feargreed', error);
-                } finally {
-                    this.showLoader('feargreed-loader', false);
                 }
             }
 
@@ -1118,66 +1189,35 @@
                     }
                 }
 
-                // Return mock data as fallback
-                return this.generateMockData(symbol);
+                // Return null if no data available - no fake data
+                return null;
             }
 
-            // 🎲 Generate realistic mock data
-            generateMockData(symbol) {
-                const mockData = {
-                    '^GSPC': { price: 4150, change: 0.5 },
-                    '^IXIC': { price: 12800, change: 0.8 },
-                    '^DJI': { price: 33500, change: 0.3 },
-                    '^RUT': { price: 1950, change: -0.2 },
-                    '^VIX': { price: 18.5, change: -5.2 },
-                    'XLK': { price: 180, change: 1.2 },
-                    'XLF': { price: 38, change: 0.5 },
-                    'XLV': { price: 125, change: 0.3 },
-                    'XLE': { price: 65, change: -0.8 },
-                    'XLU': { price: 70, change: -0.2 },
-                    'XLRE': { price: 42, change: 0.1 },
-                    'XLB': { price: 85, change: 0.4 },
-                    'XLI': { price: 110, change: 0.6 },
-                    'XLP': { price: 75, change: 0.2 },
-                    'XLY': { price: 155, change: 0.9 },
-                    '^TNX': { price: 4.25, change: 0.15 },
-                    '^TYX': { price: 4.45, change: 0.08 },
-                    '^FVX': { price: 4.10, change: 0.12 },
-                    'TLT': { price: 94.5, change: -0.25 }
-                };
-
-                const base = mockData[symbol] || { price: 100, change: 0 };
-                const randomVariation = (Math.random() - 0.5) * 2;
+            // 🧠 Enhanced Market Health calculation
+            async calculateMarketHealthScore() {
+                // Don't calculate if we don't have real VIX data
+                if (!this.dataCache.sentiment?.data?.vix) {
+                    return null;
+                }
                 
-                return {
-                    currentPrice: base.price * (1 + randomVariation / 100),
-                    change: base.price * (base.change + randomVariation) / 100,
-                    changePercent: base.change + randomVariation,
-                    volume: Math.floor(Math.random() * 10000000) + 1000000,
-                    previousClose: base.price
-                };
-            }
-
-            // 🧠 Advanced Fear & Greed calculation
-            async calculateAdvancedFearGreed() {
                 let score = 50;
                 let factors = 0;
                 
                 try {
-                    // VIX component (40% weight)
+                    // VIX component (30% weight)
                     if (this.dataCache.sentiment?.data?.vix) {
                         const vix = this.dataCache.sentiment.data.vix.currentPrice;
                         const vixScore = Math.max(0, Math.min(100, 100 - (vix - 12) * 3));
-                        score = score * 0.6 + vixScore * 0.4;
+                        score = score * 0.7 + vixScore * 0.3;
                         factors++;
                     }
                     
-                    // Market momentum (30% weight)
+                    // Market momentum (40% weight)
                     if (this.dataCache.indices?.data) {
                         const spyData = this.dataCache.indices.data.find(d => d.name.includes('S&P'));
                         if (spyData) {
                             const momentumScore = Math.max(0, Math.min(100, 50 + spyData.change * 10));
-                            score = score * 0.7 + momentumScore * 0.3;
+                            score = score * 0.6 + momentumScore * 0.4;
                             factors++;
                         }
                     }
@@ -1191,16 +1231,16 @@
                         factors++;
                     }
                     
-                    // Bond market fear (10% weight)
+                    // Bond market stability (10% weight)
                     if (this.dataCache.sentiment?.data?.tlt) {
                         const bondChange = this.dataCache.sentiment.data.tlt.changePercent;
-                        const bondScore = Math.max(0, Math.min(100, 50 - bondChange * 5));
+                        const bondScore = Math.max(0, Math.min(100, 50 - Math.abs(bondChange) * 5));
                         score = score * 0.9 + bondScore * 0.1;
                         factors++;
                     }
                     
                 } catch (error) {
-                    console.warn('Fear & Greed calculation warning:', error);
+                    console.warn('Market Health calculation warning:', error);
                 }
                 
                 if (factors > 0) {
@@ -1208,6 +1248,39 @@
                 }
                 
                 return Math.max(0, Math.min(100, Math.round(score)));
+            }
+
+            // 📊 Calculate additional health metrics
+            async calculateHealthMetrics() {
+                // Don't calculate if we don't have real VIX data
+                if (!this.dataCache.sentiment?.data?.vix) {
+                    return null;
+                }
+                
+                const metrics = {};
+                
+                // Market Stress (based on VIX)
+                const vix = this.dataCache.sentiment.data.vix.currentPrice;
+                metrics.stress = Math.min(100, Math.max(0, Math.round((vix - 10) * 3.33)));
+                
+                // Trend Strength (based on momentum)
+                const spyData = this.dataCache.indices?.data?.find(d => d.name.includes('S&P'));
+                const momentum = spyData ? spyData.change : 0;
+                metrics.trend = Math.min(100, Math.max(0, Math.round(50 + momentum * 15)));
+                
+                // Sector Rotation Health
+                if (this.dataCache.sectors?.data) {
+                    const positiveCount = this.dataCache.sectors.data.filter(s => s.change > 0).length;
+                    const totalCount = this.dataCache.sectors.data.length;
+                    metrics.rotation = Math.round((positiveCount / totalCount) * 100);
+                } else {
+                    metrics.rotation = 50;
+                }
+                
+                // Volatility Level
+                metrics.volatility = Math.min(100, Math.max(0, 100 - Math.round((vix - 10) * 2.5)));
+                
+                return metrics;
             }
 
             // 📊 Market breadth estimation
@@ -1249,15 +1322,16 @@
                 }
 
                 container.innerHTML = indices.map(index => `
-                    <div class="metric">
+                    <div class="metric" onclick="window.open('${index.url}', '_blank')" title="Click to view on Yahoo Finance">
                         <span class="metric-label">${index.name}</span>
                         <div style="text-align: right;">
-                            <div class="metric-value">${this.formatNumber(index.value)}</div>
+                            <div class="metric-value">${this.formatIndexValue(index.name, index.value)}</div>
                             <div class="metric-value ${index.change >= 0 ? 'positive' : 'negative'}" style="font-size: 0.9rem;">
                                 ${index.change >= 0 ? '+' : ''}${index.change.toFixed(2)}% 
-                                (${index.changeValue >= 0 ? '+' : ''}${this.formatNumber(index.changeValue, 0)})
+                                ${index.changeValue ? `(${index.changeValue >= 0 ? '+' : ''}${this.formatNumber(index.changeValue, 2)})` : ''}
                             </div>
                             ${index.volume ? `<div style="font-size: 0.75rem; color: var(--text-muted);">Vol: ${this.formatVolume(index.volume)}</div>` : ''}
+                            <div class="metric-timestamp">${index.timestamp || 'Unknown'}</div>
                         </div>
                     </div>
                 `).join('');
@@ -1276,21 +1350,69 @@
                 container.innerHTML = `
                     <div class="sector-grid">
                         ${sectors.map(sector => `
-                            <div class="sector-item" tabindex="0">
+                            <div class="sector-item" onclick="window.open('${sector.url}', '_blank')" title="Click to view on Yahoo Finance" tabindex="0">
                                 <div class="sector-name">${sector.icon} ${sector.name}</div>
                                 <div class="sector-change metric-value ${sector.change >= 0 ? 'positive' : 'negative'}">
                                     ${sector.change >= 0 ? '+' : ''}${sector.change.toFixed(2)}%
                                 </div>
                                 <div class="sector-price">$${sector.price ? sector.price.toFixed(2) : 'N/A'}</div>
                                 ${sector.volume ? `<div class="sector-price">Vol: ${this.formatVolume(sector.volume)}</div>` : ''}
+                                <div class="sector-price" style="font-size: 0.65rem; margin-top: 2px;">${sector.timestamp || 'Unknown'}</div>
                             </div>
                         `).join('')}
                     </div>
                 `;
             }
 
+            displayMarketHealthData(score, text, className, metrics) {
+                const needle = document.getElementById('fear-greed-needle');
+                const valueElement = document.getElementById('fear-greed-value');
+                const textElement = document.getElementById('fear-greed-text');
+                const healthContainer = document.getElementById('health-metrics');
+                
+                const rotation = (score / 100) * 180;
+                needle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+                
+                if (score <= 20 || score >= 80) {
+                    needle.style.animation = 'pulse 2s infinite';
+                } else {
+                    needle.style.animation = 'none';
+                }
+                
+                valueElement.textContent = score;
+                valueElement.className = `meter-value ${className}`;
+                textElement.textContent = text;
+                textElement.className = `meter-text ${className}`;
+                
+                // Display health metrics
+                healthContainer.innerHTML = `
+                    <div class="health-metric" onclick="this.style.transform = this.style.transform.includes('scale') ? '' : 'scale(1.05)'" title="Market Stress Level">
+                        <div class="health-label">Stress Level</div>
+                        <div class="health-value ${metrics.stress > 70 ? 'negative' : metrics.stress < 30 ? 'positive' : 'neutral'}">${metrics.stress}%</div>
+                    </div>
+                    <div class="health-metric" onclick="this.style.transform = this.style.transform.includes('scale') ? '' : 'scale(1.05)'" title="Trend Strength">
+                        <div class="health-label">Trend Strength</div>
+                        <div class="health-value ${metrics.trend > 60 ? 'positive' : metrics.trend < 40 ? 'negative' : 'neutral'}">${metrics.trend}%</div>
+                    </div>
+                    <div class="health-metric" onclick="this.style.transform = this.style.transform.includes('scale') ? '' : 'scale(1.05)'" title="Sector Rotation Health">
+                        <div class="health-label">Sector Health</div>
+                        <div class="health-value ${metrics.rotation > 60 ? 'positive' : metrics.rotation < 40 ? 'negative' : 'neutral'}">${metrics.rotation}%</div>
+                    </div>
+                    <div class="health-metric" onclick="this.style.transform = this.style.transform.includes('scale') ? '' : 'scale(1.05)'" title="Market Volatility Level">
+                        <div class="health-label">Volatility</div>
+                        <div class="health-value ${metrics.volatility > 70 ? 'positive' : metrics.volatility < 30 ? 'negative' : 'neutral'}">${metrics.volatility}%</div>
+                    </div>
+                `;
+            }
+
             displaySentimentData(data) {
                 const container = document.getElementById('sentiment-data');
+                
+                // Don't show any data if VIX is not available
+                if (data.vix === null) {
+                    container.innerHTML = '<div class="error">⚠️ Real-time sentiment data not available. Please try refreshing.</div>';
+                    return;
+                }
                 
                 const putCallEstimate = this.estimatePutCallRatio(data.vix);
                 const marketMood = this.getAdvancedMarketMood(data);
@@ -1300,41 +1422,57 @@
                 const putCallClass = putCallEstimate > 1.2 ? 'negative' : putCallEstimate < 0.8 ? 'positive' : 'neutral';
                 
                 container.innerHTML = `
-                    <div class="metric">
+                    <div class="metric" onclick="window.open('https://finance.yahoo.com/quote/%5EVIX', '_blank')" title="Click to view VIX on Yahoo Finance">
                         <span class="metric-label">🌡️ VIX (Fear Index)</span>
                         <div style="text-align: right;">
                             <span class="metric-value ${vixClass}">${data.vix.toFixed(2)}</span>
                             <div style="font-size: 0.8rem; ${data.vixChangePercent >= 0 ? 'color: var(--accent-danger)' : 'color: var(--accent-success)'}">
                                 ${data.vixChangePercent >= 0 ? '+' : ''}${data.vixChangePercent.toFixed(1)}%
                             </div>
+                            <div class="metric-timestamp">${data.timestamp || 'Unknown'}</div>
                         </div>
                     </div>
-                    <div class="metric">
+                    <div class="metric" title="AI-calculated market sentiment">
                         <span class="metric-label">🎭 Market Mood</span>
-                        <span class="metric-value ${marketMood.class}">${marketMood.text}</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value ${marketMood.class}">${marketMood.text}</span>
+                            <div class="metric-timestamp">${data.timestamp || 'Unknown'}</div>
+                        </div>
                     </div>
-                    <div class="metric">
+                    <div class="metric" title="Estimated Put/Call ratio based on VIX">
                         <span class="metric-label">📊 Est. Put/Call</span>
-                        <span class="metric-value ${putCallClass}">${putCallEstimate.toFixed(2)}</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value ${putCallClass}">${putCallEstimate.toFixed(2)}</span>
+                            <div class="metric-timestamp">${data.timestamp || 'Unknown'}</div>
+                        </div>
                     </div>
-                    <div class="metric">
+                    <div class="metric" title="Fear index calculated from VIX">
                         <span class="metric-label">⚡ Fear Index</span>
-                        <span class="metric-value ${fearIndex >= 70 ? 'negative' : fearIndex <= 30 ? 'positive' : 'neutral'}">${fearIndex}/100</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value ${fearIndex >= 70 ? 'negative' : fearIndex <= 30 ? 'positive' : 'neutral'}">${fearIndex}/100</span>
+                            <div class="metric-timestamp">${data.timestamp || 'Unknown'}</div>
+                        </div>
                     </div>
                     ${data.bondChange ? `
-                        <div class="metric">
+                        <div class="metric" onclick="window.open('https://finance.yahoo.com/quote/TLT', '_blank')" title="Click to view TLT on Yahoo Finance">
                             <span class="metric-label">🏛️ Bond Sentiment</span>
-                            <span class="metric-value ${data.bondChange > 0 ? 'negative' : 'positive'}">
-                                ${data.bondChange > 0 ? 'Risk-Off' : 'Risk-On'} (${data.bondChange.toFixed(2)}%)
-                            </span>
+                            <div style="text-align: right;">
+                                <span class="metric-value ${data.bondChange > 0 ? 'negative' : 'positive'}">
+                                    ${data.bondChange > 0 ? 'Risk-Off' : 'Risk-On'} (${data.bondChange.toFixed(2)}%)
+                                </span>
+                                <div class="metric-timestamp">${data.timestamp || 'Unknown'}</div>
+                            </div>
                         </div>
                     ` : ''}
                     ${data.spyMomentum !== null ? `
-                        <div class="metric">
+                        <div class="metric" onclick="window.open('https://finance.yahoo.com/quote/SPY', '_blank')" title="Click to view SPY on Yahoo Finance">
                             <span class="metric-label">🚀 SPY Momentum</span>
-                            <span class="metric-value ${data.spyMomentum >= 0 ? 'positive' : 'negative'}">
-                                ${data.spyMomentum >= 0 ? '+' : ''}${data.spyMomentum.toFixed(2)}%
-                            </span>
+                            <div style="text-align: right;">
+                                <span class="metric-value ${data.spyMomentum >= 0 ? 'positive' : 'negative'}">
+                                    ${data.spyMomentum >= 0 ? '+' : ''}${data.spyMomentum.toFixed(2)}%
+                                </span>
+                                <div class="metric-timestamp">${data.timestamp || 'Unknown'}</div>
+                            </div>
                         </div>
                     ` : ''}
                 `;
@@ -1353,13 +1491,14 @@
                     const displayValue = isYield ? `${bond.value.toFixed(2)}%` : `$${bond.value.toFixed(2)}`;
                     
                     return `
-                        <div class="metric">
+                        <div class="metric" onclick="window.open('${bond.url}', '_blank')" title="Click to view on Yahoo Finance">
                             <span class="metric-label">${bond.name}</span>
                             <div style="text-align: right;">
                                 <div class="metric-value">${displayValue}</div>
                                 <div class="metric-value ${bond.change >= 0 ? 'positive' : 'negative'}" style="font-size: 0.9rem;">
                                     ${bond.change >= 0 ? '+' : ''}${bond.change.toFixed(2)}%
                                 </div>
+                                <div class="metric-timestamp">${bond.timestamp || 'Unknown'}</div>
                             </div>
                         </div>
                     `;
@@ -1370,31 +1509,14 @@
                 const sentimentClass = avgChange > 0 ? 'negative' : 'positive';
                 
                 container.innerHTML += `
-                    <div class="metric" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 15px; padding-top: 15px;">
+                    <div class="metric" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 15px; padding-top: 15px;" title="Overall bond market sentiment">
                         <span class="metric-label">📊 Risk Sentiment</span>
-                        <span class="metric-value ${sentimentClass}">${riskSentiment}</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value ${sentimentClass}">${riskSentiment}</span>
+                            <div class="metric-timestamp">Calculated</div>
+                        </div>
                     </div>
                 `;
-            }
-
-            displayFearGreedData(value, text, className) {
-                const needle = document.getElementById('fear-greed-needle');
-                const valueElement = document.getElementById('fear-greed-value');
-                const textElement = document.getElementById('fear-greed-text');
-                
-                const rotation = (value / 100) * 180;
-                needle.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
-                
-                if (value <= 20 || value >= 80) {
-                    needle.style.animation = 'pulse 2s infinite';
-                } else {
-                    needle.style.animation = 'none';
-                }
-                
-                valueElement.textContent = value;
-                valueElement.className = `meter-value ${className}`;
-                textElement.textContent = text;
-                textElement.className = `meter-text ${className}`;
             }
 
             displayBreadthData(data) {
@@ -1402,31 +1524,50 @@
                 const adRatio = data.advancingStocks / (data.advancingStocks + data.decliningStocks);
                 const nhNlRatio = data.newHighs / (data.newHighs + data.newLows);
                 const breadthScore = this.calculateBreadthScore(data);
+                const timestamp = new Date().toLocaleTimeString();
                 
                 container.innerHTML = `
-                    <div class="metric">
+                    <div class="metric" title="Number of advancing stocks">
                         <span class="metric-label">📈 Advancing</span>
-                        <span class="metric-value positive">${data.advancingStocks.toLocaleString()}</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value positive">${data.advancingStocks.toLocaleString()}</span>
+                            <div class="metric-timestamp">${timestamp}</div>
+                        </div>
                     </div>
-                    <div class="metric">
+                    <div class="metric" title="Number of declining stocks">
                         <span class="metric-label">📉 Declining</span>
-                        <span class="metric-value negative">${data.decliningStocks.toLocaleString()}</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value negative">${data.decliningStocks.toLocaleString()}</span>
+                            <div class="metric-timestamp">${timestamp}</div>
+                        </div>
                     </div>
-                    <div class="metric">
+                    <div class="metric" title="Advance/Decline ratio">
                         <span class="metric-label">⚖️ A/D Ratio</span>
-                        <span class="metric-value ${adRatio > 0.6 ? 'positive' : adRatio < 0.4 ? 'negative' : 'neutral'}">${adRatio.toFixed(2)}</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value ${adRatio > 0.6 ? 'positive' : adRatio < 0.4 ? 'negative' : 'neutral'}">${adRatio.toFixed(2)}</span>
+                            <div class="metric-timestamp">${timestamp}</div>
+                        </div>
                     </div>
-                    <div class="metric">
+                    <div class="metric" title="Stocks hitting new 52-week highs">
                         <span class="metric-label">🔝 New Highs</span>
-                        <span class="metric-value positive">${data.newHighs}</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value positive">${data.newHighs}</span>
+                            <div class="metric-timestamp">${timestamp}</div>
+                        </div>
                     </div>
-                    <div class="metric">
+                    <div class="metric" title="Stocks hitting new 52-week lows">
                         <span class="metric-label">🔻 New Lows</span>
-                        <span class="metric-value negative">${data.newLows}</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value negative">${data.newLows}</span>
+                            <div class="metric-timestamp">${timestamp}</div>
+                        </div>
                     </div>
-                    <div class="metric">
+                    <div class="metric" title="Overall market breadth score">
                         <span class="metric-label">📊 Breadth Score</span>
-                        <span class="metric-value ${breadthScore > 60 ? 'positive' : breadthScore < 40 ? 'negative' : 'neutral'}">${breadthScore}/100</span>
+                        <div style="text-align: right;">
+                            <span class="metric-value ${breadthScore > 60 ? 'positive' : breadthScore < 40 ? 'negative' : 'neutral'}">${breadthScore}/100</span>
+                            <div class="metric-timestamp">${timestamp}</div>
+                        </div>
                     </div>
                 `;
             }
@@ -1482,6 +1623,13 @@
                     return (num / 1000).toFixed(1) + 'K';
                 }
                 return num.toFixed(decimals);
+            }
+
+            formatIndexValue(name, value) {
+                if (name.includes('Treasury') || name.includes('Yield')) {
+                    return `${value.toFixed(2)}%`;
+                }
+                return this.formatNumber(value, 2);
             }
 
             formatVolume(volume) {
@@ -1597,7 +1745,7 @@
                             case 'sentiment': await this.loadVIXData(); break;
                             case 'bond': await this.loadBondData(); break;
                             case 'breadth': await this.loadBreadthData(); break;
-                            case 'feargreed': await this.loadFearGreedData(); break;
+                            case 'health': await this.loadMarketHealthData(); break;
                         }
                         return;
                     } catch (retryError) {
@@ -1605,15 +1753,16 @@
                     }
                 }
                 
-                if (this.dataCache[dataType] && Date.now() - this.dataCache[dataType].timestamp < 30 * 60 * 1000) {
-                    console.log(`Using cached ${dataType} data`);
+                // Only use recent cached data if available, otherwise show error
+                if (this.dataCache[dataType] && Date.now() - this.dataCache[dataType].timestamp < 5 * 60 * 1000) {
+                    console.log(`Using recent cached ${dataType} data`);
                     return;
                 }
                 
-                const containerId = `${dataType === 'feargreed' ? 'fear-greed-text' : dataType + '-data'}`;
+                const containerId = `${dataType === 'health' ? 'health-metrics' : dataType + '-data'}`;
                 const container = document.getElementById(containerId);
                 if (container) {
-                    container.innerHTML = `<div class="error">⚠️ ${dataType} data temporarily unavailable</div>`;
+                    container.innerHTML = `<div class="error">⚠️ ${dataType} data not available. Please try refreshing.</div>`;
                 }
             }
 
@@ -1657,6 +1806,7 @@
                 this.showNotification('🔄 Force refreshing all data...', 'info');
                 this.retryAttempts = {};
                 this.dataCache = {};
+                this.timestamps = {};
                 await this.loadAllData();
             }
 
@@ -1673,8 +1823,9 @@
                 try {
                     const exportData = {
                         timestamp: new Date().toISOString(),
-                        version: '2.0',
-                        data: this.dataCache
+                        version: '2.2-SafeData',
+                        data: this.dataCache,
+                        timestamps: this.timestamps
                     };
                     
                     const dataStr = JSON.stringify(exportData, null, 2);
@@ -1698,7 +1849,7 @@
                 this.lastUpdate = new Date();
                 document.getElementById('last-updated').innerHTML = `
                     ⏱️ Last updated: <strong>${this.lastUpdate.toLocaleTimeString()}</strong><br>
-                    <small>⚡ Auto-refresh: ${this.autoRefresh ? 'ON' : 'OFF'} • 🔄 Every ${this.refreshInterval / 60000} minutes • ⌨️ Ctrl+R to refresh</small>
+                    <small>⚡ Auto-refresh: ${this.autoRefresh ? 'ON' : 'OFF'} • 🔄 Every ${this.refreshInterval / 60000} minutes • ⌨️ Ctrl+R to refresh • 🖱️ Click data for sources</small>
                 `;
             }
         }
@@ -1706,7 +1857,7 @@
         // 🚀 Initialize the Elite Dashboard
         let dashboard;
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('🎯 Elite Market Dashboard v2.0 Loading...');
+            console.log('🎯 Elite Market Dashboard v2.2-SafeData Loading...');
             dashboard = new EliteMarketDashboard();
         });
 
