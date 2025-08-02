@@ -555,6 +555,163 @@
             transform: translateX(0);
         }
 
+        /* API Key Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin: 0;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: var(--accent-primary);
+        }
+
+        .modal-body {
+            margin: 20px 0;
+        }
+
+        .modal-body p {
+            margin-bottom: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .modal-body ol {
+            color: var(--text-secondary);
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .modal-body ol li {
+            margin-bottom: 8px;
+        }
+
+        .modal-body a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .modal-body a:hover {
+            text-decoration: underline;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            font-size: 1rem;
+            margin: 10px 0;
+            transition: border-color 0.3s ease;
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .api-key-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-modal {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-modal-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+        }
+
+        .btn-modal-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-modal-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-modal-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .current-key-status {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -651,7 +808,7 @@
                         Loading indices data...
                     </div>
                 </div>
-                <div class="data-source">📡 Yahoo Finance</div>
+                <div class="data-source">📡 Alpha Vantage • Yahoo Finance (Hybrid)</div>
             </div>
 
             <!-- Sector Performance Card -->
@@ -669,7 +826,7 @@
                         Loading sector data...
                     </div>
                 </div>
-                <div class="data-source">📡 Yahoo Finance ETFs</div>
+                <div class="data-source">📡 Alpha Vantage • Yahoo Finance ETFs (Hybrid)</div>
             </div>
 
             <!-- Market Health Card -->
@@ -712,7 +869,7 @@
                         Loading sentiment data...
                     </div>
                 </div>
-                <div class="data-source">📡 VIX • Treasury • Options</div>
+                <div class="data-source">📡 VIX • Treasury • Options (Hybrid APIs)</div>
             </div>
 
             <!-- Market Breadth Card -->
@@ -748,7 +905,7 @@
                         Loading bond data...
                     </div>
                 </div>
-                <div class="data-source">📡 Treasury Yields • Risk Sentiment</div>
+                <div class="data-source">📡 Treasury Yields • Risk Sentiment (Hybrid APIs)</div>
             </div>
         </div>
 
@@ -767,7 +924,7 @@
                     💾 Export Data
                 </button>
                 <button class="btn btn-secondary" onclick="dashboard.showApiKeyInfo()">
-                    🔑 API Setup
+                    🔑 Setup API Key
                 </button>
             </div>
         </footer>
@@ -780,6 +937,51 @@
 
     <!-- Notification Container -->
     <div class="notification" id="notification"></div>
+
+    <!-- API Key Setup Modal -->
+    <div id="apiModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">🔑 Alpha Vantage API Setup</h2>
+                <span class="close" onclick="dashboard.closeApiModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p><strong>Get your free API key for better data reliability:</strong></p>
+                
+                <ol>
+                    <li>Visit: <a href="https://www.alphavantage.co/support/#api-key" target="_blank">alphavantage.co/support/#api-key</a></li>
+                    <li>Fill out the simple form (takes 30 seconds)</li>
+                    <li>Check your email for the API key</li>
+                    <li>Paste your key below:</li>
+                </ol>
+
+                <div class="current-key-status">
+                    <strong>Current Status:</strong> <span id="currentKeyStatus">Using demo key (limited)</span>
+                </div>
+
+                <input 
+                    type="text" 
+                    id="apiKeyInput" 
+                    class="api-key-input" 
+                    placeholder="Paste your Alpha Vantage API key here..."
+                    maxlength="50"
+                >
+
+                <div class="modal-buttons">
+                    <button class="btn-modal btn-modal-primary" onclick="dashboard.saveApiKey()">
+                        💾 Save API Key
+                    </button>
+                    <button class="btn-modal btn-modal-secondary" onclick="dashboard.closeApiModal()">
+                        Cancel
+                    </button>
+                </div>
+
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 15px;">
+                    <strong>Benefits:</strong> 500 free calls/day • Better reliability • Real-time data • Works 24/7
+                </p>
+            </div>
+        </div>
+    </div>
 
     <script>
         class EliteMarketDashboard {
@@ -804,10 +1006,12 @@
 
             init() {
                 console.log('🚀 Initializing Elite Market Dashboard...');
+                this.loadSavedApiKey(); // Load saved API key first
                 this.startClock();
                 this.loadAllData();
                 this.startAutoRefresh();
                 this.setupKeyboardShortcuts();
+                this.setupModalHandlers();
             }
 
             // 🕒 Real-time clock
@@ -1901,6 +2105,28 @@
                                 break;
                         }
                     }
+                    
+                    // Close modal with Escape
+                    if (e.key === 'Escape') {
+                        this.closeApiModal();
+                    }
+                });
+            }
+
+            // 🖱️ Modal handlers
+            setupModalHandlers() {
+                // Close modal when clicking outside
+                document.getElementById('apiModal').addEventListener('click', (e) => {
+                    if (e.target.id === 'apiModal') {
+                        this.closeApiModal();
+                    }
+                });
+
+                // Enter key in API input
+                document.getElementById('apiKeyInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.saveApiKey();
+                    }
                 });
             }
 
@@ -1923,22 +2149,72 @@
 
             // 🔑 API Key management
             setAlphaVantageKey(apiKey) {
-                this.apiKeys.alphaVantage = apiKey;
+                if (!apiKey || apiKey.trim() === '') {
+                    this.showNotification('❌ Please enter a valid API key', 'error');
+                    return;
+                }
+                
+                this.apiKeys.alphaVantage = apiKey.trim();
                 this.showNotification('✅ Alpha Vantage API key updated!', 'success');
-                console.log('💡 Alpha Vantage API key updated. Get your free key at: https://www.alphavantage.co/support/#api-key');
+                this.updateApiKeyStatus();
+                
+                // Save to localStorage for persistence
+                try {
+                    localStorage.setItem('alphaVantageKey', apiKey.trim());
+                } catch (e) {
+                    console.warn('Could not save API key to localStorage');
+                }
+            }
+
+            loadSavedApiKey() {
+                try {
+                    const savedKey = localStorage.getItem('alphaVantageKey');
+                    if (savedKey && savedKey !== 'demo') {
+                        this.apiKeys.alphaVantage = savedKey;
+                        this.updateApiKeyStatus();
+                    }
+                } catch (e) {
+                    console.warn('Could not load saved API key');
+                }
+            }
+
+            updateApiKeyStatus() {
+                const statusElement = document.getElementById('currentKeyStatus');
+                if (statusElement) {
+                    const isDemoKey = this.apiKeys.alphaVantage === 'demo';
+                    statusElement.textContent = isDemoKey ? 
+                        'Using demo key (limited)' : 
+                        'Using custom API key ✅';
+                    statusElement.style.color = isDemoKey ? 'var(--accent-warning)' : 'var(--accent-success)';
+                }
             }
 
             showApiKeyInfo() {
-                const message = `
-                🔑 For better reliability, get a free Alpha Vantage API key:
-                1. Visit: https://www.alphavantage.co/support/#api-key
-                2. Sign up for free (500 calls/day)
-                3. Call: dashboard.setAlphaVantageKey('YOUR_KEY_HERE')
+                document.getElementById('apiModal').classList.add('show');
+                this.updateApiKeyStatus();
+            }
+
+            closeApiModal() {
+                document.getElementById('apiModal').classList.remove('show');
+            }
+
+            saveApiKey() {
+                const apiKeyInput = document.getElementById('apiKeyInput');
+                const apiKey = apiKeyInput.value.trim();
                 
-                Currently using: ${this.apiKeys.alphaVantage === 'demo' ? 'Demo key (limited)' : 'Custom key'}
-                `;
-                console.log(message);
-                this.showNotification('Check console for API key setup info', 'info', 5000);
+                if (!apiKey) {
+                    this.showNotification('❌ Please enter an API key', 'error');
+                    return;
+                }
+                
+                this.setAlphaVantageKey(apiKey);
+                apiKeyInput.value = '';
+                this.closeApiModal();
+                
+                // Refresh data with new key
+                setTimeout(() => {
+                    this.forceRefresh();
+                }, 1000);
             }
 
             // 💾 Data export
@@ -1986,10 +2262,12 @@
             console.log('🎯 Elite Market Dashboard v2.3-HybridAPI Loading...');
             dashboard = new EliteMarketDashboard();
             
-            // Show API setup info on first load
+            // Show API setup modal on first load if using demo key
             setTimeout(() => {
                 if (dashboard.apiKeys.alphaVantage === 'demo') {
-                    dashboard.showApiKeyInfo();
+                    dashboard.showNotification('💡 For better data reliability, consider adding your free API key!', 'info', 4000);
+                    // Uncomment the line below to auto-show the modal on first demo load
+                    // dashboard.showApiKeyInfo();
                 }
             }, 3000);
         });
